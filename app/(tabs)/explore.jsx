@@ -4,7 +4,7 @@ import React from 'react'
 export default function explore() {
   return (
     <View>
-      <Text>explore</Text>
+      <Text style={{fontSize:60, fontFamily:'Outfit-Extra-Bold'}}>explore</Text>
     </View>
   )
 }
