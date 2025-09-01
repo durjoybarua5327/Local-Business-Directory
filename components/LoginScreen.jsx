@@ -1,38 +1,44 @@
-import React from 'react'
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native'
-import * as WebBrowser from 'expo-web-browser'
+import { useOAuth } from '@clerk/clerk-expo'
 import * as AuthSession from 'expo-auth-session'
-import { useSSO } from '@clerk/clerk-expo'
 import { useRouter } from 'expo-router'
+import * as WebBrowser from 'expo-web-browser'
+import React from 'react'
+import {
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+
+WebBrowser.maybeCompleteAuthSession()
+
+const { width, height } = Dimensions.get('window')
 
 export default function LoginScreen() {
   const router = useRouter()
-  const { startSSOFlow } = useSSO({ strategy: 'oauth_google' })
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
 
   const onPress = async () => {
     try {
-      const { createdSessionId, setActive, signIn, signUp } = await startSSOFlow({
-        // For native environments, you must pass a redirectUri.
+      const { createdSessionId, setActive } = await startOAuthFlow({
         redirectUrl: AuthSession.makeRedirectUri({
           useProxy: true,
-          // or provide your custom scheme if you didn’t configure a proxy
-          // scheme: "myapp",
         }),
       })
 
-      if (createdSessionId) {
-        await setActive?.({ session: createdSessionId })
-        router.replace('/')
-      } else {
-        // If the session wasn’t created—for example due to MFA—you can handle next steps using signIn or signUp
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId })
+        router.replace('/app_layout')
       }
     } catch (err) {
-      console.error('SSO/OAuth error:', err)
+      console.error('OAuth error:', err)
     }
   }
 
   React.useEffect(() => {
-    // Optimize OAuth experience on Android
     WebBrowser.warmUpAsync()
     return () => {
       WebBrowser.coolDownAsync()
@@ -40,81 +46,99 @@ export default function LoginScreen() {
   }, [])
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{ alignItems: 'center', marginTop: 80 }}>
-        <Image
-          source={require('../assets/images/picture1.jpg')}
-          style={{
-            width: 220,
-            height: 450,
-            borderRadius: 20,
-            borderWidth: 4,
-            borderColor: '#d42525ff',
-          }}
-        />
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={styles.container}>
+        {/* Image Section */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={require('../assets/images/picture1.jpg')}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* Text + Button Section */}
+        <View style={styles.subcontainer}>
+          <Text style={styles.headerPrimary}>Your ultimate</Text>
+          <Text style={styles.headerSecondary}>Community Business Directory</Text>
+          <Text style={styles.headerApp}>App</Text>
+
+          <Text style={styles.description}>
+            Find your favourite business near you and post your own business to your community
+          </Text>
+
+          <TouchableOpacity style={styles.btn} onPress={onPress}>
+            <Text style={styles.btnText}>Continue with Google</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.subcontainer}>
-        <Text style={styles.headerPrimary}>Your ultimate</Text>
-        <Text style={styles.headerSecondary}>Community Business Directory</Text>
-        <Text style={styles.headerApp}>App</Text>
-        <Text style={styles.description}>
-          Find your favourite business near you and post your own business to your community
-        </Text>
-        <TouchableOpacity style={styles.btn} onPress={onPress}>
-          <Text style={styles.btnText}>Continue with Google</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  subcontainer: {
-    backgroundColor: '#fff',
-    paddingTop: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
+  container: {
     flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  imageContainer: {
+    marginTop: height * 0.08,
+    alignItems: 'center',
+  },
+  image: {
+    width: width * 0.6, // 60% of screen width
+    height: height * 0.5, // 50% of screen height
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#d42525ff',
+  },
+  subcontainer: {
+    flex: 1,
+    width: '90%',
+    alignItems: 'center',
+    marginTop: 20,
   },
   headerPrimary: {
-    fontSize: 22,
+    fontSize: width * 0.055, // scales with screen width
     fontWeight: 'bold',
     color: '#d42525ff',
-    marginBottom: 5,
     textAlign: 'center',
+    marginBottom: 5,
   },
   headerSecondary: {
-    fontSize: 22,
+    fontSize: width * 0.055,
     color: '#2c1eceff',
     fontFamily: 'Outfit-Medium',
     textAlign: 'center',
   },
   headerApp: {
-    fontSize: 26,
+    fontSize: width * 0.065,
     fontFamily: 'Outfit-Extra-Bold',
     color: '#d42525ff',
     marginTop: 8,
     textAlign: 'center',
   },
   description: {
-    fontSize: 16,
+    fontSize: width * 0.04,
     fontFamily: 'Outfit-Regular',
     textAlign: 'center',
-    marginVertical: 2,
+    marginVertical: 8,
     color: '#706c6cff',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
   },
   btn: {
     backgroundColor: '#d42525ff',
-    paddingVertical: 14,
+    paddingVertical: height * 0.018, // adjusts with height
     borderRadius: 12,
     alignItems: 'center',
-    width: '90%',
+    width: '100%',
     marginTop: 16,
   },
   btnText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: width * 0.045,
     fontWeight: 'bold',
   },
 })
