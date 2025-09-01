@@ -1,8 +1,8 @@
-import { useOAuth } from '@clerk/clerk-expo'
-import * as AuthSession from 'expo-auth-session'
-import { useRouter } from 'expo-router'
-import * as WebBrowser from 'expo-web-browser'
-import React from 'react'
+import { useOAuth } from "@clerk/clerk-expo";
+import * as AuthSession from "expo-auth-session";
+import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import React from "react";
 import {
   Dimensions,
   Image,
@@ -11,15 +11,19 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native'
+} from "react-native";
 
-WebBrowser.maybeCompleteAuthSession()
+WebBrowser.maybeCompleteAuthSession();
 
-const { width, height } = Dimensions.get('window')
+const { width, height } = Dimensions.get("window");
+
+const LIGHT_RED = "#ffcccc";
+const RED_ACCENT = "#ff6f6f";
+const TEXT_RED = "#d42525";
 
 export default function LoginScreen() {
-  const router = useRouter()
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
+  const router = useRouter();
+  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
   const onPress = async () => {
     try {
@@ -27,23 +31,23 @@ export default function LoginScreen() {
         redirectUrl: AuthSession.makeRedirectUri({
           useProxy: true,
         }),
-      })
+      });
 
       if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId })
-        router.replace('/app_layout')
+        await setActive({ session: createdSessionId });
+        router.replace("/app_layout");
       }
     } catch (err) {
-      console.error('OAuth error:', err)
+      console.error("OAuth error:", err);
     }
-  }
+  };
 
   React.useEffect(() => {
-    WebBrowser.warmUpAsync()
+    WebBrowser.warmUpAsync();
     return () => {
-      WebBrowser.coolDownAsync()
-    }
-  }, [])
+      WebBrowser.coolDownAsync();
+    };
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -51,7 +55,7 @@ export default function LoginScreen() {
         {/* Image Section */}
         <View style={styles.imageContainer}>
           <Image
-            source={require('../assets/images/picture1.jpg')}
+            source={require("../assets/images/picture1.jpg")}
             style={styles.image}
             resizeMode="cover"
           />
@@ -60,11 +64,14 @@ export default function LoginScreen() {
         {/* Text + Button Section */}
         <View style={styles.subcontainer}>
           <Text style={styles.headerPrimary}>Your ultimate</Text>
-          <Text style={styles.headerSecondary}>Community Business Directory</Text>
+          <Text style={styles.headerSecondary}>
+            Community Business Directory
+          </Text>
           <Text style={styles.headerApp}>App</Text>
 
           <Text style={styles.description}>
-            Find your favourite business near you and post your own business to your community
+            Find your favourite business near you and post your own business to
+            your community
           </Text>
 
           <TouchableOpacity style={styles.btn} onPress={onPress}>
@@ -73,72 +80,76 @@ export default function LoginScreen() {
         </View>
       </View>
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
+    backgroundColor: LIGHT_RED,
+    alignItems: "center",
     paddingBottom: 20,
   },
   imageContainer: {
     marginTop: height * 0.08,
-    alignItems: 'center',
+    alignItems: "center",
   },
   image: {
     width: width * 0.6, // 60% of screen width
     height: height * 0.5, // 50% of screen height
     borderRadius: 20,
     borderWidth: 3,
-    borderColor: '#d42525ff',
+    borderColor: RED_ACCENT,
+    backgroundColor: LIGHT_RED,
   },
   subcontainer: {
     flex: 1,
-    width: '90%',
-    alignItems: 'center',
+    width: "90%",
+    alignItems: "center",
     marginTop: 20,
+    backgroundColor: "#ffeaea",
+    borderRadius: 16,
+    padding: 12,
   },
   headerPrimary: {
     fontSize: width * 0.055, // scales with screen width
-    fontWeight: 'bold',
-    color: '#d42525ff',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: TEXT_RED,
+    textAlign: "center",
     marginBottom: 5,
   },
   headerSecondary: {
     fontSize: width * 0.055,
-    color: '#2c1eceff',
-    fontFamily: 'Outfit-Medium',
-    textAlign: 'center',
+    color: RED_ACCENT,
+    fontFamily: "Outfit-Medium",
+    textAlign: "center",
   },
   headerApp: {
     fontSize: width * 0.065,
-    fontFamily: 'Outfit-Extra-Bold',
-    color: '#d42525ff',
+    fontFamily: "Outfit-Extra-Bold",
+    color: TEXT_RED,
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   description: {
     fontSize: width * 0.04,
-    fontFamily: 'Outfit-Regular',
-    textAlign: 'center',
+    fontFamily: "Outfit-Regular",
+    textAlign: "center",
     marginVertical: 8,
-    color: '#706c6cff',
+    color: RED_ACCENT,
     paddingHorizontal: 10,
   },
   btn: {
-    backgroundColor: '#d42525ff',
+    backgroundColor: RED_ACCENT,
     paddingVertical: height * 0.018, // adjusts with height
     borderRadius: 12,
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
     marginTop: 16,
   },
   btnText: {
-    color: '#fff',
+    color: LIGHT_RED,
     fontSize: width * 0.045,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
-})
+});
