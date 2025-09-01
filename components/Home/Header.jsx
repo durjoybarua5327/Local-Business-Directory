@@ -8,10 +8,13 @@ const TEXT_RED = '#d42525'
 
 export default function Header() {
   const { user } = useUser()
+  const avatarUrl = user?.profileImageUrl
+  const name = user?.fullName || user?.firstName || 'User'
+
   return (
     <View
       style={{
-        paddingTop: 20,
+        paddingTop: 12,
         paddingHorizontal: 16,
         backgroundColor: LIGHT_RED,
         borderBottomLeftRadius: 16,
@@ -22,9 +25,11 @@ export default function Header() {
         elevation: 3,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
         <Image
-          source={{ uri: user?.imageUrl }}
+          source={
+            { uri: avatarUrl }
+          }
           style={{
             width: 48,
             height: 48,
@@ -34,6 +39,7 @@ export default function Header() {
             backgroundColor: LIGHT_RED,
             marginRight: 12,
           }}
+          resizeMode="cover"
         />
         <View>
           <Text
@@ -43,16 +49,17 @@ export default function Header() {
               color: TEXT_RED,
             }}
           >
-            {user?.firstName} {user?.lastName}
+            welcome, Game play
           </Text>
           <Text
             style={{
-              fontSize: 13,
+              fontSize: 15,
               fontFamily: 'Outfit-Regular',
-              color: RED_ACCENT,
+              color: TEXT_RED,
+              marginTop: 2,
             }}
           >
-            {user?.emailAddresses?.[0]?.emailAddress}
+            {name}
           </Text>
         </View>
       </View>
