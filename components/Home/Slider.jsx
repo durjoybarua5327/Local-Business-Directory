@@ -1,10 +1,10 @@
+import { collection, getDocs, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, Dimensions } from 'react-native';
+import { Dimensions, FlatList, Image, StyleSheet, Text, View } from 'react-native';
 import { db } from './../../Configs/FireBaseConfig';
-import { collection, query, getDocs } from 'firebase/firestore';
 
 const { width } = Dimensions.get('window');
-const RADISH = '#D32F2F'; // Radish-like theme color
+const RADISH = '#D32F2F';
 
 export default function Slider() {
   const [sliderslist, setSliderslist] = useState([]);
@@ -54,15 +54,14 @@ export default function Slider() {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 20,
-    paddingLeft: 15,
+  marginVertical: 20,
+  marginBottom: 0,
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 22,
+    fontSize: 20,
     marginBottom: 15,
-    marginLeft: 15,
-    color: RADISH,
+    marginLeft: 15
   },
   card: {
     marginRight: 15,
@@ -72,17 +71,15 @@ const styles = StyleSheet.create({
   imageShadow: {
     borderRadius: 20,
     overflow: 'hidden',
-    // iOS shadow
     shadowColor: RADISH,
     shadowOpacity: 0.4,
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 8 },
-    // Android shadow
     elevation: 8,
   },
   image: {
-    width: width * 0.65,
-    height: 140,
+    width: width * 0.6,
+    height: 120,
     borderRadius: 20,
   },
 });
