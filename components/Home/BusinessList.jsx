@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, Linking, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, Linking, Dimensions } from 'react-native';
+import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from './../../Configs/FireBaseConfig';
-import { collection, query, getDocs } from 'firebase/firestore';
 
 const RADISH = '#D32F2F';
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function BusinessList() {
   const [businesses, setBusinesses] = useState([]);
@@ -27,32 +28,42 @@ export default function BusinessList() {
   }, []);
 
   const openWebsite = (url) => {
-    if (url) {
-      Linking.openURL(url);
-    }
+    if (url) Linking.openURL(url);
   };
-
-  const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => openWebsite(item.website)} style={styles.card}>
-      <Image source={{ uri: item.imageUrl }} style={styles.image} />
-      <View style={styles.info}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.category}>{item.category}</Text>
-        <Text style={styles.address}>{item.address}</Text>
-        <Text style={styles.about}>{item.about}</Text>
-        {item.website ? <Text style={styles.website}>{item.website}</Text> : null}
-      </View>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Business List</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Popular Business</Text>
+        <Text style={styles.viewAll}>View All</Text>
+      </View>
+
       <FlatList
         data={businesses}
         keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 10 }}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.card} onPress={() => openWebsite(item.website)}>
+            <Image source={{ uri: item.imageUrl }} style={styles.image} />
+            
+            <View style={styles.infoBox}>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.location}>{item.address}</Text>
+
+              <View style={styles.bottomRow}>
+                <View style={styles.ratingRow}>
+                  <Image source={require('./../../assets/images/star.png')} style={styles.star} />
+                  <Text style={styles.rating}>4.5</Text>
+                </View>
+                <View style={styles.categoryBox}>
+                  <Text style={styles.categoryText}>{item.category}</Text>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
       />
     </View>
   );
@@ -60,63 +71,87 @@ export default function BusinessList() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    marginVertical: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 15,
-    paddingTop: 20,
-    backgroundColor: '#fff',
+    marginBottom: 10,
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 24,
+    fontSize: 15,
     color: RADISH,
-    marginBottom: 15,
+  },
+  viewAll: {
+    fontFamily: 'Outfit-Medium',
+    fontSize: 14,
+    color: RADISH,
   },
   card: {
-    marginBottom: 20,
-    borderRadius: 15,
-    overflow: 'hidden',
+    width: screenWidth * 0.65,
     backgroundColor: '#fff',
-    shadowColor: RADISH,
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 5,
+    borderRadius: 12,
+    marginRight: 15,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
   },
   image: {
     width: '100%',
-    height: 150,
+    aspectRatio: 5 / 2,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
-  info: {
+  infoBox: {
     padding: 10,
+    alignItems: 'flex-start',
   },
   name: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 18,
-    color: RADISH,
-    marginBottom: 3,
-  },
-  category: {
-    fontFamily: 'Outfit-Regular',
     fontSize: 14,
-    color: '#555',
-    marginBottom: 3,
-  },
-  address: {
-    fontFamily: 'Outfit-Regular',
-    fontSize: 12,
-    color: '#777',
-    marginBottom: 3,
-  },
-  about: {
-    fontFamily: 'Outfit-Regular',
-    fontSize: 12,
-    color: '#555',
-    marginBottom: 3,
-  },
-  website: {
-    fontFamily: 'Outfit-Regular',
-    fontSize: 12,
     color: RADISH,
-    textDecorationLine: 'underline',
+    marginBottom: 2,
+  },
+  location: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 12,
+    color: '#555',
+    marginBottom: 5,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  star: {
+    width: 14,
+    height: 14,
+    marginRight: 4,
+  },
+  rating: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 12,
+    color: '#333',
+  },
+  categoryBox: {
+    backgroundColor: RADISH,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  categoryText: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 12,
+    color: '#fff',
   },
 });

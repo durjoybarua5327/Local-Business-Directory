@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { collection, getDocs, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -7,14 +8,15 @@ const RADISH = '#D32F2F';
 
 export default function Category() {
   const [categories, setCategories] = useState([]);
+  const router = useRouter();
 
-  const GetCategories = async () => {
+  const getCategories = async () => {
     try {
       const q = query(collection(db, 'Category'));
       const querySnapshot = await getDocs(q);
       const items = [];
       querySnapshot.forEach((doc) => {
-        items.push(doc.data());
+        items.push({ id: doc.id, ...doc.data() }); // include the doc id
       });
       setCategories(items);
     } catch (error) {
@@ -23,8 +25,13 @@ export default function Category() {
   };
 
   useEffect(() => {
-    GetCategories();
+    getCategories();
   }, []);
+
+  const onCategoryPress = (category) => {
+    console.log('Category pressed:', category.name);
+    router.push('/BusinessList/' + encodeURIComponent(category.name));
+  };
 
   return (
     <View style={styles.container}>
@@ -35,15 +42,19 @@ export default function Category() {
 
       <FlatList
         data={categories}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 10 }}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.item}>
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => onCategoryPress(item)}
+          >
             <Image source={{ uri: item.icon }} style={styles.icon} />
             <Text style={styles.name}>{item.name}</Text>
           </TouchableOpacity>
+
         )}
       />
     </View>
@@ -53,6 +64,8 @@ export default function Category() {
 const styles = StyleSheet.create({
   container: {
     marginVertical: 20,
+    marginTop: 0,
+    marginBottom: 5,
   },
   header: {
     flexDirection: 'row',
@@ -63,7 +76,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 20,
+    fontSize: 15,
     color: RADISH,
   },
   viewAll: {

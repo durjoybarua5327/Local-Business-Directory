@@ -55,13 +55,14 @@ export default function Slider() {
 const styles = StyleSheet.create({
   container: {
   marginVertical: 20,
-  marginBottom: 0,
+  marginTop: 15,
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 20,
-    marginBottom: 15,
-    marginLeft: 15
+    fontSize: 15,
+    marginBottom: 5,
+    marginLeft: 15,
+    color: RADISH,
   },
   card: {
     marginRight: 15,
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: width * 0.6,
-    height: 120,
+    height: 100,
     borderRadius: 20,
   },
 });
