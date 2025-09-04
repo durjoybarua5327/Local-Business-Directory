@@ -1,9 +1,13 @@
 import { Image } from 'expo-image';
-import { Text, View } from 'react-native';
+import { Text, View,TouchableOpacity } from 'react-native';
+import React from 'react';
+import { useRouter } from 'expo-router';
 const RADISH = '#f07e7eff';
 export default function BusinessListCard({ business }) {
+  const router= useRouter();
+
   return (
-    <View
+    <TouchableOpacity
       style={{
         backgroundColor: RADISH, 
         marginHorizontal: 10,
@@ -14,6 +18,8 @@ export default function BusinessListCard({ business }) {
         padding: 10,
         alignItems: 'center',
       }}
+      onPress={() => {  router.push('/BusinessDetails/' + encodeURIComponent(business.id));
+        }}
     >
       <Image
         source={{ uri: business.imageUrl }}
@@ -28,6 +34,6 @@ export default function BusinessListCard({ business }) {
           ⭐ {business.rating || "No Rating"}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
