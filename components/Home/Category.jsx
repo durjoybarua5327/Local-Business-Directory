@@ -16,7 +16,7 @@ export default function Category() {
       const querySnapshot = await getDocs(q);
       const items = [];
       querySnapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() }); // include the doc id
+        items.push({ id: doc.id, ...doc.data() });
       });
       setCategories(items);
     } catch (error) {
