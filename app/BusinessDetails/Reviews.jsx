@@ -1,14 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Rating } from 'react-native-ratings';
 
 export default function Reviews({ rating }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Customer Reviews</Text>
-      
-      {/* Star Rating */}
-      <Rating
+            <Rating
         type="star"
         startingValue={rating || 0} 
         imageSize={25}  
