@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, Linking, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+  Dimensions,
+} from 'react-native';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from './../../Configs/FireBaseConfig';
 
 const RADISH = '#D32F2F';
 const { width: screenWidth } = Dimensions.get('window');
+const vw = screenWidth / 100;
 
 export default function BusinessList() {
   const [businesses, setBusinesses] = useState([]);
@@ -43,18 +53,24 @@ export default function BusinessList() {
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 10 }}
+        contentContainerStyle={{ paddingHorizontal: vw * 2.5 }}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => openWebsite(item.website)}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => openWebsite(item.website)}
+          >
             <Image source={{ uri: item.imageUrl }} style={styles.image} />
-            
+
             <View style={styles.infoBox}>
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.location}>{item.address}</Text>
 
               <View style={styles.bottomRow}>
                 <View style={styles.ratingRow}>
-                  <Image source={require('./../../assets/images/star.png')} style={styles.star} />
+                  <Image
+                    source={require('./../../assets/images/star.png')}
+                    style={styles.star}
+                  />
                   <Text style={styles.rating}>4.5</Text>
                 </View>
                 <View style={styles.categoryBox}>
@@ -71,57 +87,57 @@ export default function BusinessList() {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 20,
+    marginVertical: vw * 5,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    marginBottom: 10,
+    paddingHorizontal: vw * 4,
+    marginBottom: vw * 2,
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 15,
+    fontSize: vw * 4.2, // ~15px
     color: RADISH,
   },
   viewAll: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 14,
+    fontSize: vw * 4, // ~14px
     color: RADISH,
   },
   card: {
     width: screenWidth * 0.65,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginRight: 15,
+    borderRadius: vw * 3,
+    marginRight: vw * 4,
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: vw * 1.2,
+    shadowOffset: { width: 0, height: vw * 0.5 },
   },
   image: {
     width: '100%',
     aspectRatio: 5 / 2,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: vw * 3,
+    borderTopRightRadius: vw * 3,
   },
   infoBox: {
-    padding: 10,
+    padding: vw * 3,
     alignItems: 'flex-start',
   },
   name: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 14,
+    fontSize: vw * 3.8, // ~14px
     color: RADISH,
-    marginBottom: 2,
+    marginBottom: vw * 0.8,
   },
   location: {
     fontFamily: 'Outfit-Regular',
-    fontSize: 12,
+    fontSize: vw * 3.2, // ~12px
     color: '#555',
-    marginBottom: 5,
+    marginBottom: vw * 1.2,
   },
   bottomRow: {
     flexDirection: 'row',
@@ -134,24 +150,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   star: {
-    width: 14,
-    height: 14,
-    marginRight: 4,
+    width: vw * 3.8, // ~14px
+    height: vw * 3.8,
+    marginRight: vw * 1,
   },
   rating: {
     fontFamily: 'Outfit-Regular',
-    fontSize: 12,
+    fontSize: vw * 3.2,
     color: '#333',
   },
   categoryBox: {
     backgroundColor: RADISH,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: vw * 2.5,
+    paddingVertical: vw * 1,
+    borderRadius: vw * 3,
   },
   categoryText: {
     fontFamily: 'Outfit-Regular',
-    fontSize: 12,
+    fontSize: vw * 3.2,
     color: '#fff',
   },
 });

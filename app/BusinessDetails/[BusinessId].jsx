@@ -81,7 +81,6 @@ export default function BusinessDetails() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Shop Image with Back Button */}
       <View style={styles.imageWrapper}>
         {Business.imageUrl && <Image source={{ uri: Business.imageUrl }} style={styles.image} />}
         <TouchableOpacity style={styles.floatingBackBtn} onPress={() => router.back()}>
@@ -89,13 +88,11 @@ export default function BusinessDetails() {
         </TouchableOpacity>
       </View>
 
-      {/* Business Details */}
       <View style={styles.detailsContainer}>
         <Text style={styles.title}>{Business.name || "Unnamed Business"}</Text>
         <Text style={styles.category}>{Business.category || ""}</Text>
         <Text style={styles.address}>{Business.address || ""}</Text>
 
-        {/* Action Buttons */}
         <View style={styles.actionsRow}>
           <TouchableOpacity style={styles.actionBtn} onPress={handleCall}>
             <Ionicons name="call" size={18} color="#fff" />
@@ -116,7 +113,6 @@ export default function BusinessDetails() {
         </View>
       </View>
 
-      {/* About Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <Text style={styles.description}>
@@ -124,7 +120,6 @@ export default function BusinessDetails() {
         </Text>
       </View>
 
-      {/* Reviews Component */}
       <Reviews rating={Business.rating} />
     </ScrollView>
   );

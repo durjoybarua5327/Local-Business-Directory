@@ -1,10 +1,23 @@
 import { useRouter } from 'expo-router';
 import { collection, getDocs, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { db } from './../../Configs/FireBaseConfig';
 
+const { width, height } = Dimensions.get('window');
 const RADISH = '#D32F2F';
+
+// Helpers
+const vw = width / 100;
+const vh = height / 100;
 
 export default function Category() {
   const [categories, setCategories] = useState([]);
@@ -45,7 +58,7 @@ export default function Category() {
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 10 }}
+        contentContainerStyle={{ paddingHorizontal: vw * 2.5 }}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.item}
@@ -54,7 +67,6 @@ export default function Category() {
             <Image source={{ uri: item.icon }} style={styles.icon} />
             <Text style={styles.name}>{item.name}</Text>
           </TouchableOpacity>
-
         )}
       />
     </View>
@@ -63,41 +75,40 @@ export default function Category() {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 20,
-    marginTop: 0,
-    marginBottom: 5,
+    marginTop: vh * 1,
+    marginBottom: vh * 1,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    marginBottom: 10,
+    paddingHorizontal: vw * 4,
+    marginBottom: vh * 1.2,
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 15,
+    fontSize: vw * 4.2, 
     color: RADISH,
   },
   viewAll: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 14,
+    fontSize: vw * 3.8,
     color: RADISH,
   },
   item: {
-    width: 50,
-    marginRight: 15,
+    width: vw * 14, 
+    marginRight: vw * 4,
     alignItems: 'center',
   },
   icon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginBottom: 5,
+    width: vw * 11,  
+    height: vw * 11, 
+    borderRadius: vw * 2,
+    marginBottom: vh * 0.6,
   },
   name: {
     fontFamily: 'Outfit-Regular',
-    fontSize: 12,
+    fontSize: vw * 3.2, 
     textAlign: 'center',
     color: '#333',
   },

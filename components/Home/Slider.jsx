@@ -3,8 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { Dimensions, FlatList, Image, StyleSheet, Text, View } from 'react-native';
 import { db } from './../../Configs/FireBaseConfig';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const RADISH = '#D32F2F';
+
+
+const vw = width / 100;
+const vh = height / 100;
 
 export default function Slider() {
   const [sliderslist, setSliderslist] = useState([]);
@@ -54,33 +58,33 @@ export default function Slider() {
 
 const styles = StyleSheet.create({
   container: {
-  marginVertical: 20,
-  marginTop: 15,
+    marginVertical: vh * 2,
+    marginTop: vh * 1.5,
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: 15,
-    marginBottom: 5,
-    marginLeft: 15,
+    fontSize: vw * 4.2, 
+    marginBottom: vh * 0.8,
+    marginLeft: vw * 4,
     color: RADISH,
   },
   card: {
-    marginRight: 15,
-    borderRadius: 20,
+    marginRight: vw * 4,
+    borderRadius: vw * 5,
     overflow: 'visible',
   },
   imageShadow: {
-    borderRadius: 20,
+    borderRadius: vw * 5,
     overflow: 'hidden',
     shadowColor: RADISH,
     shadowOpacity: 0.4,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: vw * 4,
+    shadowOffset: { width: 0, height: vh },
     elevation: 8,
   },
   image: {
-    width: width * 0.6,
-    height: 100,
-    borderRadius: 20,
+    width: width * 0.6,      
+    height: height * 0.14,        
+    borderRadius: vw * 5,
   },
 });
