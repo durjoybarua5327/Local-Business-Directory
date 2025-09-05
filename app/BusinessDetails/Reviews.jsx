@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Animated, FlatList } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Animated, FlatList, Image } from 'react-native';
 import { Rating } from 'react-native-ratings';
 import { useState, useEffect } from 'react';
 import { db } from './../../Configs/FireBaseConfig';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useUser } from '@clerk/clerk-expo';  
 
 export default function Reviews({ businessId }) {
   const [rating, setRating] = useState(0);
@@ -10,6 +11,8 @@ export default function Reviews({ businessId }) {
   const [reviews, setReviews] = useState([]);
   const [showNotification, setShowNotification] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+
+  const { user } = useUser();  // ✅ logged-in user
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -42,6 +45,7 @@ export default function Reviews({ businessId }) {
   const handleSubmit = async () => {
     if (rating === 0) { alert('Please give a rating.'); return; }
     if (comment.trim() === '') { alert('Please write a comment.'); return; }
+    if (!user) { alert('You must be logged in to submit a review.'); return; }
 
     try {
       if (!businessId) return;
@@ -51,7 +55,15 @@ export default function Reviews({ businessId }) {
 
       const data = docSnap.data();
       const currentReviews = Array.isArray(data.reviews) ? data.reviews : [];
-      const newReview = { rating, comment, createdAt: new Date().toISOString() };
+
+      const newReview = { 
+        rating, 
+        comment, 
+        userName: user.fullName || user.primaryEmailAddress?.emailAddress,
+        userImage: user.imageUrl, 
+        createdAt: new Date().toISOString() 
+      };
+
       const updatedReviews = [...currentReviews, newReview];
 
       await updateDoc(docRef, { reviews: updatedReviews });
@@ -71,6 +83,7 @@ export default function Reviews({ businessId }) {
     <View style={styles.container}>
       <Text style={styles.title}>Customer Reviews</Text>
 
+      {/* Rating Section */}
       <Rating
         type="star"
         startingValue={rating}
@@ -78,17 +91,22 @@ export default function Reviews({ businessId }) {
         onFinishRating={setRating}
         style={styles.rating}
       />
-
       <Text style={styles.ratingText}>{rating ? `${rating} / 5` : 'Tap stars to rate'}</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Write your comment..."
-        placeholderTextColor="#ffb3b3"
-        value={comment}
-        onChangeText={setComment}
-        multiline
-      />
+      {/* Comment Input Section */}
+      <View style={styles.inputRow}>
+        {user && (
+          <Image source={{ uri: user.imageUrl }} style={styles.userImage} />
+        )}
+        <TextInput
+          style={styles.input}
+          placeholder="Write your comment..."
+          placeholderTextColor="#ffb3b3"
+          value={comment}
+          onChangeText={setComment}
+          multiline
+        />
+      </View>
 
       {showNotification && (
         <Animated.View style={[styles.notification, { opacity: fadeAnim }]}>
@@ -100,6 +118,7 @@ export default function Reviews({ businessId }) {
         <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
 
+      {/* Reviews List */}
       <FlatList
         data={reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))}
         keyExtractor={(item, index) => index.toString()}
@@ -107,7 +126,21 @@ export default function Reviews({ businessId }) {
         style={styles.flatList}
         renderItem={({ item }) => (
           <View style={styles.reviewCard}>
-            <Text style={styles.reviewRating}>⭐ {item.rating} / 5</Text>
+            <View style={styles.reviewHeader}>
+              <Image 
+                source={{ uri: item.userImage }} 
+                style={styles.userImage} 
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.userName}>{item.userName}</Text>
+                <View style={styles.ratingRow}>
+                  <Text style={styles.reviewRating}>⭐ {item.rating} / 5</Text>
+                  <Text style={styles.reviewDate}>
+                    {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </Text>
+                </View>
+              </View>
+            </View>
             <Text style={styles.reviewComment}>{item.comment}</Text>
           </View>
         )}
@@ -122,43 +155,88 @@ const LIGHT_RED = '#ff7961';
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingHorizontal: 15, // horizontal space
+    paddingHorizontal: 15, 
     alignItems: 'center',
   },
   title: { fontSize: 16, fontWeight: 'bold', color: RED, marginBottom: 10 },
   rating: { paddingVertical: 5 },
   ratingText: { fontSize: 14, color: LIGHT_RED, marginTop: 5 },
-  input: {
+
+  // Comment input row (Play Store style)
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 15,
     width: '100%',
+  },
+  input: {
+    flex: 1,
     borderWidth: 1,
     borderColor: RED,
     borderRadius: 8,
-    padding: 12,
-    marginTop: 15,
+    padding: 10,
     color: '#d32f2f',
     fontSize: 14,
     backgroundColor: '#fff5f5',
-    minHeight: 80,
+    minHeight: 60,
     textAlignVertical: 'top',
   },
+
   button: {
-    marginTop: 15,
+    marginTop: 12,
     backgroundColor: RED,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
     width: '100%',
   },
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  flatList: { marginTop: 20, width: '100%' }, // matches container width
+
+  flatList: { marginTop: 20, width: '100%' },
   reviewCard: {
     backgroundColor: '#ffeaea',
-    padding: 10,
+    padding: 12,
     borderRadius: 8,
-    marginVertical: 5,
+    marginVertical: 6,
+    marginHorizontal: 8,
   },
-  reviewRating: { color: '#d32f2f', fontWeight: 'bold' },
-  reviewComment: { color: '#444', marginTop: 5 },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  userImage: {
+    width: 35,
+    height: 35,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  userName: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    color: '#d32f2f',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  reviewRating: { 
+    color: '#d32f2f', 
+    fontWeight: 'bold', 
+    marginRight: 10,
+    fontSize: 13,
+  },
+  reviewDate: {
+    fontSize: 12,
+    color: '#888',
+  },
+  reviewComment: { 
+    color: '#444', 
+    marginTop: 6, 
+    fontSize: 14,
+    lineHeight: 20,
+  },
   notification: {
     marginTop: 8,
     backgroundColor: '#fddede',

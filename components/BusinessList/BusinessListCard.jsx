@@ -1,25 +1,32 @@
 import { Image } from 'expo-image';
-import { Text, View,TouchableOpacity } from 'react-native';
-import React from 'react';
+import { Text, View, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
 import { useRouter } from 'expo-router';
+
 const RADISH = '#f07e7eff';
+
 export default function BusinessListCard({ business }) {
-  const router= useRouter();
+  const router = useRouter();
+
+  const averageRating = useMemo(() => {
+    if (!business?.reviews || business.reviews.length === 0) return "No Rating";
+    const total = business.reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+    return (total / business.reviews.length).toFixed(1);
+  }, [business]);
 
   return (
     <TouchableOpacity
       style={{
-        backgroundColor: RADISH, 
+        backgroundColor: RADISH,
         marginHorizontal: 10,
-        marginVertical: 6,          
-        borderRadius: 10,          
-        overflow: 'hidden',  
+        marginVertical: 6,
+        borderRadius: 10,
+        overflow: 'hidden',
         flexDirection: 'row',
         padding: 10,
         alignItems: 'center',
       }}
-      onPress={() => {  router.push('/BusinessDetails/' + encodeURIComponent(business.id));
-        }}
+      onPress={() => router.push('/BusinessDetails/' + encodeURIComponent(business.id))}
     >
       <Image
         source={{ uri: business.imageUrl }}
@@ -31,7 +38,7 @@ export default function BusinessListCard({ business }) {
           {business.address || "No Address"}
         </Text>
         <Text style={{ color: '#fff', fontSize: 12, marginTop: 5 }}>
-          ⭐ {business.rating || "No Rating"}
+          ⭐ {averageRating} {business.reviews?.length ? `(${business.reviews.length} reviews)` : ""}
         </Text>
       </View>
     </TouchableOpacity>

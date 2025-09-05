@@ -6,11 +6,11 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
-  Linking,
   Dimensions,
 } from 'react-native';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from './../../Configs/FireBaseConfig';
+import { useRouter } from 'expo-router';
 
 const RADISH = '#D32F2F';
 const { width: screenWidth } = Dimensions.get('window');
@@ -18,6 +18,14 @@ const vw = screenWidth / 100;
 
 export default function BusinessList() {
   const [businesses, setBusinesses] = useState([]);
+  const router = useRouter();
+
+  // Function to calculate average rating
+  const getAverageRating = (business) => {
+    if (!business?.reviews || business.reviews.length === 0) return 0;
+    const total = business.reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+    return total / business.reviews.length;
+  };
 
   const GetBusinesses = async () => {
     try {
@@ -27,7 +35,10 @@ export default function BusinessList() {
       querySnapshot.forEach((doc) => {
         items.push({ id: doc.id, ...doc.data() });
       });
-      setBusinesses(items);
+
+      // Filter businesses with average rating >= 4
+      const popularBusinesses = items.filter((b) => getAverageRating(b) >= 4);
+      setBusinesses(popularBusinesses);
     } catch (error) {
       console.error('Error fetching Business List:', error);
     }
@@ -36,10 +47,6 @@ export default function BusinessList() {
   useEffect(() => {
     GetBusinesses();
   }, []);
-
-  const openWebsite = (url) => {
-    if (url) Linking.openURL(url);
-  };
 
   return (
     <View style={styles.container}>
@@ -57,7 +64,9 @@ export default function BusinessList() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => openWebsite(item.website)}
+            onPress={() =>
+              router.push('/BusinessDetails/' + encodeURIComponent(item.id))
+            }
           >
             <Image source={{ uri: item.imageUrl }} style={styles.image} />
 
@@ -71,7 +80,12 @@ export default function BusinessList() {
                     source={require('./../../assets/images/star.png')}
                     style={styles.star}
                   />
-                  <Text style={styles.rating}>4.5</Text>
+                  <Text style={styles.rating}>
+                    ⭐ {getAverageRating(item).toFixed(1)}
+                    {item.reviews?.length
+                      ? ` (${item.reviews.length})`
+                      : ''}
+                  </Text>
                 </View>
                 <View style={styles.categoryBox}>
                   <Text style={styles.categoryText}>{item.category}</Text>
@@ -98,12 +112,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: vw * 4.2, // ~15px
+    fontSize: vw * 4.2,
     color: RADISH,
   },
   viewAll: {
     fontFamily: 'Outfit-Medium',
-    fontSize: vw * 4, // ~14px
+    fontSize: vw * 4,
     color: RADISH,
   },
   card: {
@@ -129,13 +143,13 @@ const styles = StyleSheet.create({
   },
   name: {
     fontFamily: 'Outfit-Medium',
-    fontSize: vw * 3.8, // ~14px
+    fontSize: vw * 3.8,
     color: RADISH,
     marginBottom: vw * 0.8,
   },
   location: {
     fontFamily: 'Outfit-Regular',
-    fontSize: vw * 3.2, // ~12px
+    fontSize: vw * 3.2,
     color: '#555',
     marginBottom: vw * 1.2,
   },
@@ -150,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   star: {
-    width: vw * 3.8, // ~14px
+    width: vw * 3.8,
     height: vw * 3.8,
     marginRight: vw * 1,
   },
