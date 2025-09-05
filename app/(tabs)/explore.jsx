@@ -4,7 +4,14 @@ import React from 'react'
 export default function explore() {
   return (
     <View>
-      <Text style={{fontSize:60, fontFamily:'Outfit-Extra-Bold'}}>explore</Text>
+      <Text>explore more</Text>
+      {/*Search Bar*/}
+      {/*Categories*/}
+      {/*BusinessList*/}
+
+
     </View>
+
+
   )
 }
