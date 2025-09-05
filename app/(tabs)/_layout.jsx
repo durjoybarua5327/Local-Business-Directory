@@ -13,7 +13,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: RED_ACCENT,
-        tabBarInactiveTintColor: ICON_GRAY, // Inactive icons are gray for contrast
+        tabBarInactiveTintColor: ICON_GRAY,
         tabBarStyle: {
           backgroundColor: LIGHT_RED,
           borderTopColor: RED_ACCENT,
