@@ -1,6 +1,5 @@
-import { useUser } from '@clerk/clerk-expo'
-import { Ionicons } from '@expo/vector-icons'
-import React from 'react'
+import { useUser, useClerk } from '@clerk/clerk-expo'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   Dimensions,
   Image,
@@ -9,18 +8,25 @@ import {
   StatusBar,
   ScrollView,
   Text,
+  TouchableOpacity,
   View,
+  Modal,
+  Animated,
 } from 'react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Ionicons } from '@expo/vector-icons'
 
-const { width } = Dimensions.get('window')
+const { width, height } = Dimensions.get('window')
 const LIGHT_RED = '#ffe5e5'
 const RED_ACCENT = '#ff6f6f'
 const TEXT_RED = '#d42525'
 
 export default function Profile() {
   const { user } = useUser()
+  const { signOut, openSignIn } = useClerk()
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
+  const slideAnim = useRef(new Animated.Value(height)).current // start offscreen
 
   const imageUrl = user?.imageUrl
   const name = user?.fullName || user?.firstName || 'User'
@@ -29,6 +35,30 @@ export default function Profile() {
   const avatarSize = width * 0.3
   const horizontalPadding = width * 0.05
   const spacing = width * 0.03
+
+  // Open modal with slide animation
+  const handleSignOutPress = () => {
+    setShowSignOutModal(true)
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start()
+  }
+
+  // Close modal with slide-down animation
+  const handleCloseModal = () => {
+    Animated.timing(slideAnim, {
+      toValue: height,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setShowSignOutModal(false))
+  }
+
+  const handleConfirmSignOut = () => {
+    handleCloseModal()
+    signOut()
+  }
 
   return (
     <SafeAreaView
@@ -39,7 +69,7 @@ export default function Profile() {
       }}
     >
       <ScrollView contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
-        {/* Header with Gradient */}
+        {/* Header Gradient */}
         <LinearGradient
           colors={['#ff7f7f', '#ffb3b3']}
           style={{
@@ -53,7 +83,6 @@ export default function Profile() {
             elevation: 5,
           }}
         >
-          {/* User Avatar */}
           {imageUrl ? (
             <Image
               source={{ uri: imageUrl }}
@@ -94,7 +123,6 @@ export default function Profile() {
             </View>
           )}
 
-          {/* User Name */}
           <Text
             style={{
               fontSize: RFValue(26),
@@ -109,7 +137,6 @@ export default function Profile() {
             {name}
           </Text>
 
-          {/* User Email */}
           <Text
             style={{
               fontSize: RFValue(16),
@@ -123,7 +150,7 @@ export default function Profile() {
           </Text>
         </LinearGradient>
 
-        {/* Account Info Card */}
+        {/* Account Info */}
         <View
           style={{
             backgroundColor: '#fff',
@@ -166,7 +193,47 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Settings Card */}
+        {/* Sign In / Sign Out Button */}
+        <TouchableOpacity
+          onPress={() => (user ? handleSignOutPress() : openSignIn())}
+          activeOpacity={0.8}
+          style={{ marginBottom: spacing * 2 }}
+        >
+          <LinearGradient
+            colors={user ? ['#ff4e4e', '#ff7f7f'] : ['#4e9eff', '#7fbfff']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: spacing,
+              borderRadius: 12,
+              shadowColor: '#000',
+              shadowOpacity: 0.2,
+              shadowRadius: 6,
+              elevation: 3,
+            }}
+          >
+            <Ionicons
+              name={user ? 'log-out-outline' : 'log-in-outline'}
+              size={RFValue(20)}
+              color="#fff"
+              style={{ marginRight: spacing / 2 }}
+            />
+            <Text
+              style={{
+                color: '#fff',
+                fontSize: RFValue(16),
+                fontFamily: 'Outfit-Bold',
+              }}
+            >
+              {user ? 'Sign Out' : 'Sign In'}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Settings */}
         <View
           style={{
             backgroundColor: '#fff',
@@ -191,6 +258,92 @@ export default function Profile() {
           <Text style={{ fontSize: RFValue(14), color: '#555' }}>Coming Soon...</Text>
         </View>
       </ScrollView>
+
+      {/* Animated Slide-Up Modal */}
+      <Modal transparent visible={showSignOutModal} animationType="none">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <Animated.View
+            style={{
+              transform: [{ translateY: slideAnim }],
+              backgroundColor: '#fff',
+              padding: 20,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              shadowColor: RED_ACCENT,
+              shadowOpacity: 0.4,
+              shadowRadius: 10,
+              elevation: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: RFValue(18),
+                fontFamily: 'Outfit-Bold',
+                color: RED_ACCENT,
+                textAlign: 'center',
+                marginBottom: 15,
+              }}
+            >
+              Confirm Sign Out
+            </Text>
+
+            <Text
+              style={{
+                fontSize: RFValue(16),
+                fontFamily: 'Outfit-Medium',
+                color: '#333',
+                textAlign: 'center',
+                marginBottom: 20,
+              }}
+            >
+              Are you sure you want to sign out?
+            </Text>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <TouchableOpacity
+                onPress={handleCloseModal}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#ccc',
+                  padding: 12,
+                  borderRadius: 10,
+                  marginRight: 10,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: RFValue(14), fontFamily: 'Outfit-Bold' }}>No</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleConfirmSignOut}
+                style={{
+                  flex: 1,
+                  backgroundColor: RED_ACCENT,
+                  padding: 12,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: RFValue(14),
+                    fontFamily: 'Outfit-Bold',
+                    color: '#fff',
+                  }}
+                >
+                  Yes
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
