@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { db } from './../../Configs/FireBaseConfig';
+import { useRouter } from 'expo-router'; // added for navigation
 
 const { width } = Dimensions.get('window');
 const horizontalPadding = width * 0.04;
@@ -74,12 +75,18 @@ const Category = ({ selectedCategory, setSelectedCategory }) => {
 };
 
 export default function Explore() {
+  const router = useRouter(); // initialize router
   const [search, setSearch] = useState('');
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedReviews, setSelectedReviews] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All'); // Default to All
+
+  // Navigate to BusinessDetails on press
+  const onBusinessPress = (business) => {
+    router.push('/BusinessDetails/' + encodeURIComponent(business.id));
+  };
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -120,7 +127,6 @@ export default function Explore() {
     const searchLower = search.toLowerCase().trim();
     const address = item.address ? item.address.toLowerCase() : '';
     const matchesSearch = address.includes(searchLower);
-    // Show all categories if "All" is selected
     const matchesCategory =
       selectedCategory && selectedCategory !== 'All' ? item.category === selectedCategory : true;
     return matchesSearch && matchesCategory;
@@ -153,9 +159,16 @@ export default function Explore() {
       {/* Dynamic Heading for business list with icon */}
       {!loading && filteredData.length > 0 && (
         <View style={styles.sectionTitleContainer}>
-          <Ionicons name="location-sharp" size={RFValue(15)} color={RED_ACCENT} style={{ marginRight: 4 }} />
+          <Ionicons
+            name="location-sharp"
+            size={RFValue(15)}
+            color={RED_ACCENT}
+            style={{ marginRight: 4 }}
+          />
           <Text style={styles.sectionTitle}>
-            {selectedCategory === 'All' ? 'All Shops Nearby' : `${selectedCategory} Shops Nearby`}
+            {selectedCategory === 'All'
+              ? 'All Shops Nearby'
+              : `${selectedCategory} Shops Nearby`}
           </Text>
         </View>
       )}
@@ -173,7 +186,7 @@ export default function Explore() {
           keyExtractor={(item) => item.id}
           scrollEnabled={false}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card}>
+            <TouchableOpacity style={styles.card} onPress={() => onBusinessPress(item)}>
               {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
               <View style={styles.cardContent}>
                 <Text style={styles.name}>{item.name}</Text>
