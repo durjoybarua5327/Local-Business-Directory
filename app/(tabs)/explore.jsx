@@ -115,6 +115,7 @@ export default function Explore() {
     fetchBusinesses();
   }, []);
 
+  // Filter by search and category
   const filteredData = businesses.filter((item) => {
     const searchLower = search.toLowerCase().trim();
     const address = item.address ? item.address.toLowerCase() : '';
@@ -149,10 +150,17 @@ export default function Explore() {
       {/* Category Component */}
       <Category selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
 
-      {/* Business List */}
-      {/* Business List */}
-      <Text style={styles.sectionTitle}>Nearby Shops</Text>
+      {/* Dynamic Heading for business list with icon */}
+      {!loading && filteredData.length > 0 && (
+        <View style={styles.sectionTitleContainer}>
+          <Ionicons name="location-sharp" size={RFValue(15)} color={RED_ACCENT} style={{ marginRight: 4 }} />
+          <Text style={styles.sectionTitle}>
+            {selectedCategory === 'All' ? 'All Shops Nearby' : `${selectedCategory} Shops Nearby`}
+          </Text>
+        </View>
+      )}
 
+      {/* Business List */}
       {loading ? (
         <ActivityIndicator size="large" color={RED_ACCENT} style={{ marginTop: 20 }} />
       ) : filteredData.length === 0 ? (
@@ -160,27 +168,22 @@ export default function Explore() {
           No businesses found
         </Text>
       ) : (
-        <>
-          {/* Heading for business list */}
-
-          <FlatList
-            data={filteredData}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.card}>
-                {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
-                <View style={styles.cardContent}>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.address}>{item.address}</Text>
-                  {item.avgRating && <Text style={styles.review}>Rating: ⭐{item.avgRating}/5</Text>}
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </>
+        <FlatList
+          data={filteredData}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.card}>
+              {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
+              <View style={styles.cardContent}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.address}>{item.address}</Text>
+                {item.avgRating && <Text style={styles.review}>Rating: ⭐{item.avgRating}/5</Text>}
+              </View>
+            </TouchableOpacity>
+          )}
+        />
       )}
-
 
       {/* Reviews Modal */}
       <Modal
@@ -257,6 +260,23 @@ const styles = StyleSheet.create({
     color: TEXT_RED,
     paddingVertical: 0,
   },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing * 2,
+  },
+  sectionTitle: {
+    fontSize: RFValue(16),
+    fontWeight: 'bold',
+    color: TEXT_RED,
+    textTransform: 'uppercase',
+    borderBottomWidth: 3,
+    borderBottomColor: RED_ACCENT,
+    paddingBottom: 4,
+    textShadowColor: 'rgba(255, 111, 111, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
   card: {
     flexDirection: 'row',
     backgroundColor: '#fff5f5',
@@ -300,18 +320,6 @@ const styles = StyleSheet.create({
     padding: 15,
     maxHeight: '70%',
   },
-  sectionTitle: {
-  fontSize: RFValue(15), 
-  fontWeight: 'bold',
-  color: TEXT_RED,
-  marginBottom: spacing * 2,
-  textTransform: 'uppercase',  
-  borderBottomWidth: 3,    
-  borderBottomColor: RED_ACCENT,
-  paddingBottom: 4,              
-  alignSelf: 'flex-start',   
-},
-
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: TEXT_RED, textAlign: 'center' },
   reviewCard: { marginBottom: 10, borderBottomWidth: 0.5, borderColor: '#ccc', paddingBottom: 6 },
   reviewComment: { fontSize: 13, color: '#444' },
