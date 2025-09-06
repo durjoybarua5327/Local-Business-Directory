@@ -15,12 +15,12 @@ import { db } from './../../Configs/FireBaseConfig';
 const { width, height } = Dimensions.get('window');
 const RADISH = '#D32F2F';
 
-// Helpers
 const vw = width / 100;
 const vh = height / 100;
 
 export default function Category() {
   const [categories, setCategories] = useState([]);
+  const [viewAll, setViewAll] = useState(false);
   const router = useRouter();
 
   const getCategories = async () => {
@@ -42,26 +42,38 @@ export default function Category() {
   }, []);
 
   const onCategoryPress = (category) => {
-    console.log('Category pressed:', category.name);
     router.push('/BusinessList/' + encodeURIComponent(category.name));
   };
+
+  // Calculate number of items per row dynamically
+  const itemWidth = vw * 20; // width of one category item including margin
+  const numColumns = viewAll ? Math.floor(width / itemWidth) : 1;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Category</Text>
-        <Text style={styles.viewAll}>View All</Text>
+
+        <TouchableOpacity onPress={() => setViewAll(!viewAll)}>
+          <Text style={styles.viewAll}>
+            {viewAll ? 'Show Less' : 'View All'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
+        key={viewAll ? 'VERTICAL' : 'HORIZONTAL'} // forces re-render
         data={categories}
         keyExtractor={(item) => item.id}
-        horizontal
+        horizontal={!viewAll}
+        numColumns={numColumns}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: vw * 2.5 }}
+        contentContainerStyle={{
+          paddingHorizontal: vw * 2.5,
+        }}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.item}
+            style={[styles.item, viewAll && styles.itemVertical]}
             onPress={() => onCategoryPress(item)}
           >
             <Image source={{ uri: item.icon }} style={styles.icon} />
@@ -87,7 +99,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: vw * 4.2, 
+    fontSize: vw * 4.2,
     color: RADISH,
   },
   viewAll: {
@@ -96,19 +108,24 @@ const styles = StyleSheet.create({
     color: RADISH,
   },
   item: {
-    width: vw * 14, 
+    width: vw * 14,
     marginRight: vw * 4,
     alignItems: 'center',
   },
+  itemVertical: {
+    flex: 1,
+    margin: vw * 1,
+    alignItems: 'center',
+  },
   icon: {
-    width: vw * 11,  
-    height: vw * 11, 
+    width: vw * 11,
+    height: vw * 11,
     borderRadius: vw * 2,
     marginBottom: vh * 0.6,
   },
   name: {
     fontFamily: 'Outfit-Regular',
-    fontSize: vw * 3.2, 
+    fontSize: vw * 3.2,
     textAlign: 'center',
     color: '#333',
   },

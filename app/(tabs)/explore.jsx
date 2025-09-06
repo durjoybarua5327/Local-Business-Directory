@@ -5,7 +5,6 @@ import { RFValue } from 'react-native-responsive-fontsize';
 import Category from '../../components/Home/Category.jsx';
 
 const { width } = Dimensions.get('window');
-const avatarSize = width * 0.12;
 const horizontalPadding = width * 0.04;
 const spacing = width * 0.02;
 
@@ -13,13 +12,7 @@ const LIGHT_RED = '#ffeaea';
 const RED_ACCENT = '#ff6f6f';
 const TEXT_RED = '#d42525';
 
-const categoriesData = [
-  { id: '1', name: 'Books' },
-  { id: '2', name: 'Stationery' },
-  { id: '3', name: 'Cafes' },
-  { id: '4', name: 'Restaurants' },
-  { id: '5', name: 'Grocery' },
-];
+
 
 export default function Explore() {
   const [search, setSearch] = useState('');
@@ -45,12 +38,8 @@ export default function Explore() {
         />
       </View>
 
-      {/* Categories */}
       <Category />
-
-      {/* Popular Business (Add your BusinessList component here) */}
-      <Text style={styles.sectionTitle}>Popular Businesses</Text>
-      {/* <BusinessList /> */}
+      
     </ScrollView>
   );
 }

@@ -18,12 +18,15 @@ const vw = screenWidth / 100;
 
 export default function BusinessList() {
   const [businesses, setBusinesses] = useState([]);
+  const [viewAll, setViewAll] = useState(false); // <-- controls layout
   const router = useRouter();
 
-  // Function to calculate average rating
   const getAverageRating = (business) => {
     if (!business?.reviews || business.reviews.length === 0) return 0;
-    const total = business.reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+    const total = business.reviews.reduce(
+      (sum, review) => sum + (review.rating || 0),
+      0
+    );
     return total / business.reviews.length;
   };
 
@@ -36,8 +39,9 @@ export default function BusinessList() {
         items.push({ id: doc.id, ...doc.data() });
       });
 
-      // Filter businesses with average rating >= 4
-      const popularBusinesses = items.filter((b) => getAverageRating(b) >= 4);
+      const popularBusinesses = items.filter(
+        (b) => getAverageRating(b) >= 4
+      );
       setBusinesses(popularBusinesses);
     } catch (error) {
       console.error('Error fetching Business List:', error);
@@ -48,28 +52,38 @@ export default function BusinessList() {
     GetBusinesses();
   }, []);
 
+  const onBusinessPress = (business) => {
+    router.push('/BusinessDetails/' + encodeURIComponent(business.id));
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Popular Business</Text>
-        <Text style={styles.viewAll}>View All</Text>
+
+        <TouchableOpacity onPress={() => setViewAll(!viewAll)}>
+          <Text style={styles.viewAll}>
+            {viewAll ? 'Show Less' : 'View All'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
+        key={viewAll ? 'VERTICAL' : 'HORIZONTAL'} // forces re-render
         data={businesses}
         keyExtractor={(item) => item.id}
-        horizontal
+        horizontal={!viewAll}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: vw * 2.5 }}
+        contentContainerStyle={{
+          paddingHorizontal: vw * 2.5,
+          alignItems: viewAll ? 'center' : 'flex-start',
+        }}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-              router.push('/BusinessDetails/' + encodeURIComponent(item.id))
-            }
+            style={[styles.card, viewAll && styles.cardVertical]}
+            onPress={() => onBusinessPress(item)}
           >
             <Image source={{ uri: item.imageUrl }} style={styles.image} />
-
             <View style={styles.infoBox}>
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.location}>{item.address}</Text>
@@ -82,9 +96,7 @@ export default function BusinessList() {
                   />
                   <Text style={styles.rating}>
                     ⭐ {getAverageRating(item).toFixed(1)}
-                    {item.reviews?.length
-                      ? ` (${item.reviews.length})`
-                      : ''}
+                    {item.reviews?.length ? ` (${item.reviews.length})` : ''}
                   </Text>
                 </View>
                 <View style={styles.categoryBox}>
@@ -130,6 +142,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: vw * 1.2,
     shadowOffset: { width: 0, height: vw * 0.5 },
+  },
+  cardVertical: {
+    width: screenWidth * 0.9,
+    marginBottom: vw * 4,
+    alignSelf: 'center', // centers the card in vertical list
   },
   image: {
     width: '100%',
