@@ -12,7 +12,7 @@ export default function Reviews({ businessId }) {
   const [showNotification, setShowNotification] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
-  const { user } = useUser();  // ✅ logged-in user
+  const { user } = useUser(); 
 
   useEffect(() => {
     const fetchReviews = async () => {
