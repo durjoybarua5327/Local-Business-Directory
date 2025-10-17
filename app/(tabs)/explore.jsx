@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router'; // added for navigation
 import { collection, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import {
@@ -16,7 +17,6 @@ import {
 } from 'react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { db } from './../../Configs/FireBaseConfig';
-import { useRouter } from 'expo-router'; // added for navigation
 
 const { width } = Dimensions.get('window');
 const horizontalPadding = width * 0.04;
@@ -192,6 +192,18 @@ export default function Explore() {
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.address}>{item.address}</Text>
                 {item.avgRating && <Text style={styles.review}>Rating: ⭐{item.avgRating}/5</Text>}
+                {/* Show View Reviews button when reviews exist */}
+                {item.reviews && item.reviews.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.viewReviewsBtn}
+                    onPress={() => {
+                      setSelectedReviews(item.reviews);
+                      setModalVisible(true);
+                    }}
+                  >
+                    <Text style={styles.viewReviewsText}>View Reviews</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </TouchableOpacity>
           )}

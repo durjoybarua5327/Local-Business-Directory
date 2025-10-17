@@ -1,10 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { TouchableOpacity, StyleSheet, View, Animated, Alert } from 'react-native';
-import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
-import { fetchAndSaveShops } from '../app/utils/fetchAndSaveShops.jsx';
 import { useAuth } from '@clerk/clerk-expo';
-
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import React, { useRef, useState } from 'react';
+import { Alert, Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
 const LocationButton = () => {
   const [locationText, setLocationText] = useState('');
   const [isFetching, setIsFetching] = useState(false);
