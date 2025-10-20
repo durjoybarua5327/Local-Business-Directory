@@ -26,7 +26,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
         </Stack>
-        <LocationButton />
+        {/* <LocationButton /> */}
       </SignedIn>
       <SignedOut>
         <LoginScreen />
