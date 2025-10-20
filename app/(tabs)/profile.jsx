@@ -16,6 +16,7 @@ import {
 import { RFValue } from 'react-native-responsive-fontsize'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window')
 const LIGHT_RED = '#ffe5e5'
@@ -25,6 +26,7 @@ const TEXT_RED = '#d42525'
 export default function Profile() {
   const { user } = useUser()
   const { signOut, openSignIn } = useClerk()
+  const router = useRouter()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const slideAnim = useRef(new Animated.Value(height)).current // start offscreen
 
@@ -229,6 +231,53 @@ export default function Profile() {
               }}
             >
               {user ? 'Sign Out' : 'Sign In'}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Create Your Own Account Button */}
+        <TouchableOpacity
+          onPress={() => router.push({
+  pathname: '/CreateOwnBusinesses/CreateOwnBusiness', // match folder/file exactly
+  params: { userEmail: user?.emailAddresses?.[0]?.emailAddress }
+})
+
+
+
+          }
+          activeOpacity={0.8}
+          style={{ marginBottom: spacing * 2 }}
+        >
+          <LinearGradient
+            colors={['#4e9eff', '#7fbfff']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: spacing,
+              borderRadius: 12,
+              shadowColor: '#000',
+              shadowOpacity: 0.2,
+              shadowRadius: 6,
+              elevation: 3,
+            }}
+          >
+            <Ionicons
+              name='person-add-outline'
+              size={RFValue(20)}
+              color="#fff"
+              style={{ marginRight: spacing / 2 }}
+            />
+            <Text
+              style={{
+                color: '#fff',
+                fontSize: RFValue(16),
+                fontFamily: 'Outfit-Bold',
+              }}
+            >
+              Create your own account
             </Text>
           </LinearGradient>
         </TouchableOpacity>
