@@ -10,17 +10,26 @@ import {
   Platform,
   StatusBar,
   ActivityIndicator,
+  FlatList,
 } from 'react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 import { LinearGradient } from 'expo-linear-gradient'
 import { db } from '../../Configs/FireBaseConfig'
-import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore'
+import {
+  collection,
+  addDoc,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+} from 'firebase/firestore'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 
-const LIGHT_RED = '#ffe5e5'
-const RED_ACCENT = '#ff6f6f'
+const PRIMARY_RED = '#ff4d4d'
+const LIGHT_RED = '#fff2f2'
+const GRADIENT_RED = ['#ff4d4d', '#ff7878', '#ff9a9e']
 
-export default function CreateOwnBusiness() {
+const CreateOwnBusiness = () => {
   const { userEmail, businessId } = useLocalSearchParams()
   const router = useRouter()
 
@@ -31,6 +40,10 @@ export default function CreateOwnBusiness() {
   const [about, setAbout] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const [allCategories, setAllCategories] = useState([])
+  const [filteredCategories, setFilteredCategories] = useState([])
+
+  // Fetch business details if editing
   useEffect(() => {
     if (!businessId) return
     const fetchBusiness = async () => {
@@ -52,6 +65,45 @@ export default function CreateOwnBusiness() {
     }
     fetchBusiness()
   }, [businessId])
+
+  // Fetch all categories once
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'Business List'))
+        const categories = []
+        querySnapshot.forEach((docItem) => {
+          const data = docItem.data()
+          if (data.category) {
+            categories.push(data.category.trim().toLowerCase())
+          }
+        })
+        const unique = [...new Set(categories)]
+        setAllCategories(unique)
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  // Filter category suggestions
+  const handleCategoryChange = (text) => {
+    setCategory(text)
+    if (text.length > 0) {
+      const filtered = allCategories.filter((c) =>
+        c.toLowerCase().startsWith(text.toLowerCase())
+      )
+      setFilteredCategories(filtered)
+    } else {
+      setFilteredCategories([])
+    }
+  }
+
+  const handleSelectCategory = (item) => {
+    setCategory(item)
+    setFilteredCategories([])
+  }
 
   const handleSubmit = async () => {
     if (!name || !address || !category || !imageUrl || !about) {
@@ -77,7 +129,10 @@ export default function CreateOwnBusiness() {
         Alert.alert('Success', 'Business Updated Successfully!')
       } else {
         const colRef = collection(db, 'Business List')
-        await addDoc(colRef, { ...businessData, createdAt: new Date().toISOString() })
+        await addDoc(colRef, {
+          ...businessData,
+          createdAt: new Date().toISOString(),
+        })
         Alert.alert('Success', 'Business Created Successfully!')
       }
 
@@ -95,41 +150,61 @@ export default function CreateOwnBusiness() {
     }
   }
 
-  const InputField = ({ label, value, onChangeText, placeholder, multiline, numberOfLines }) => (
-    <View style={{ marginBottom: 20 }}>
+  // ✅ Fixed "missing display name" + typing
+  const InputField = ({
+    label,
+    value,
+    onChangeText,
+    placeholder,
+    multiline = false,
+    numberOfLines = 1,
+  }) => (
+    <View
+      style={{
+        marginBottom: 20,
+        backgroundColor: '#fff',
+        borderRadius: 18,
+        padding: 14,
+        shadowColor: '#ff4d4d',
+        shadowOpacity: 0.15,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 6,
+        elevation: 4,
+      }}
+    >
       <Text
         style={{
           fontSize: RFValue(14),
           marginBottom: 8,
-          color: '#444',
-          fontWeight: '600',
+          color: PRIMARY_RED,
+          fontWeight: '700',
         }}
       >
         {label}
       </Text>
       <TextInput
         placeholder={placeholder}
+        placeholderTextColor="#b3b3b3"
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(text) => onChangeText(text)} // ✅ proper callback
         multiline={multiline}
         numberOfLines={numberOfLines}
+        blurOnSubmit={false}
         textAlignVertical={multiline ? 'top' : 'center'}
         style={{
-          borderWidth: 1,
-          borderColor: '#f0b3b3',
+          borderWidth: 1.2,
+          borderColor: '#ffd6d6',
           borderRadius: 14,
           padding: 12,
           fontSize: RFValue(14),
-          backgroundColor: '#fff',
-          shadowColor: '#000',
-          shadowOpacity: 0.05,
-          shadowOffset: { width: 0, height: 2 },
-          shadowRadius: 5,
-          elevation: 2,
+          backgroundColor: LIGHT_RED,
+          color: '#333',
         }}
       />
     </View>
   )
+
+  InputField.displayName = 'InputField' // ✅ ESLint display-name fix
 
   return (
     <SafeAreaView
@@ -141,36 +216,37 @@ export default function CreateOwnBusiness() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           padding: 20,
           paddingBottom: 50,
         }}
       >
-        {/* Header Gradient */}
+        {/* Header */}
         <LinearGradient
-          colors={[RED_ACCENT, '#ff9a9e']}
+          colors={GRADIENT_RED}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{
-            borderRadius: 18,
-            paddingVertical: 18,
+            borderRadius: 20,
+            paddingVertical: 25,
             marginBottom: 25,
             alignItems: 'center',
-            shadowColor: RED_ACCENT,
+            shadowColor: PRIMARY_RED,
             shadowOpacity: 0.4,
-            shadowRadius: 10,
+            shadowRadius: 12,
             elevation: 4,
           }}
         >
           <Text
             style={{
               color: '#fff',
-              fontSize: RFValue(20),
-              fontWeight: '700',
-              letterSpacing: 0.5,
+              fontSize: RFValue(22),
+              fontWeight: '800',
+              letterSpacing: 0.8,
             }}
           >
-            {businessId ? 'Edit Business Details' : 'Create Your Own Business'}
+            {businessId ? '✨ Edit Business Details ✨' : '🚀 Create Your Business'}
           </Text>
         </LinearGradient>
 
@@ -181,24 +257,71 @@ export default function CreateOwnBusiness() {
           value={name}
           onChangeText={setName}
         />
+
         <InputField
           label="Address *"
           placeholder="Enter business address"
           value={address}
           onChangeText={setAddress}
         />
+
+        {/* Category Field */}
         <InputField
           label="Category *"
-          placeholder="E.g., Hospital, Restaurant, Store"
+          placeholder="E.g., Restaurant, Store, Hospital"
           value={category}
-          onChangeText={setCategory}
+          onChangeText={handleCategoryChange}
         />
+
+        {/* Category Suggestions */}
+        {filteredCategories.length > 0 && (
+          <View
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: '#ffcccc',
+              marginTop: -10,
+              marginBottom: 20,
+              maxHeight: 150,
+            }}
+          >
+            <FlatList
+              data={filteredCategories}
+              keyExtractor={(item, index) => index.toString()}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => handleSelectCategory(item)}
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#ffe5e5',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: RFValue(14),
+                      color: PRIMARY_RED,
+                      fontWeight: '600',
+                    }}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        )}
+
         <InputField
           label="Image URL *"
-          placeholder="Enter image URL for your business"
+          placeholder="Paste an image URL"
           value={imageUrl}
           onChangeText={setImageUrl}
         />
+
         <InputField
           label="About / Description *"
           placeholder="Write a detailed description..."
@@ -208,30 +331,31 @@ export default function CreateOwnBusiness() {
           numberOfLines={6}
         />
 
-        {/* User Email Display */}
+        {/* Associated Email */}
         {userEmail && (
           <View
             style={{
               marginBottom: 30,
-              padding: 12,
+              backgroundColor: LIGHT_RED,
+              borderRadius: 18,
+              padding: 15,
               borderWidth: 1,
-              borderColor: '#ffd6d6',
-              borderRadius: 14,
-              backgroundColor: '#fff8f8',
-              shadowColor: '#000',
-              shadowOpacity: 0.05,
-              shadowOffset: { width: 0, height: 2 },
-              shadowRadius: 3,
-              elevation: 2,
+              borderColor: '#ffcaca',
+              shadowColor: PRIMARY_RED,
+              shadowOpacity: 0.1,
+              shadowRadius: 6,
+              elevation: 3,
             }}
           >
-            <Text style={{ fontSize: RFValue(13), color: '#555' }}>Associated Email:</Text>
+            <Text style={{ fontSize: RFValue(13), color: '#777' }}>
+              Associated Email:
+            </Text>
             <Text
               style={{
                 fontSize: RFValue(14),
-                fontWeight: 'bold',
-                color: RED_ACCENT,
-                marginTop: 2,
+                fontWeight: '700',
+                color: PRIMARY_RED,
+                marginTop: 3,
               }}
             >
               {userEmail}
@@ -246,23 +370,23 @@ export default function CreateOwnBusiness() {
             activeOpacity={0.8}
             style={{
               flex: 1,
-              backgroundColor: '#eee',
+              backgroundColor: '#ffeaea',
               paddingVertical: 15,
-              borderRadius: 14,
+              borderRadius: 16,
               alignItems: 'center',
               justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOpacity: 0.1,
-              shadowOffset: { width: 0, height: 2 },
-              shadowRadius: 3,
-              elevation: 2,
+              shadowColor: '#ff4d4d',
+              shadowOpacity: 0.15,
+              shadowOffset: { width: 0, height: 3 },
+              shadowRadius: 4,
+              elevation: 3,
             }}
           >
             <Text
               style={{
-                color: '#333',
+                color: '#cc0000',
                 fontSize: RFValue(15),
-                fontWeight: '600',
+                fontWeight: '700',
               }}
             >
               Cancel
@@ -276,17 +400,17 @@ export default function CreateOwnBusiness() {
             style={{ flex: 1 }}
           >
             <LinearGradient
-              colors={[RED_ACCENT, '#ff8a8a']}
+              colors={GRADIENT_RED}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
                 paddingVertical: 15,
-                borderRadius: 14,
+                borderRadius: 16,
                 alignItems: 'center',
                 justifyContent: 'center',
-                shadowColor: RED_ACCENT,
+                shadowColor: PRIMARY_RED,
                 shadowOpacity: 0.4,
-                shadowRadius: 8,
+                shadowRadius: 10,
                 elevation: 4,
               }}
             >
@@ -297,11 +421,11 @@ export default function CreateOwnBusiness() {
                   style={{
                     color: '#fff',
                     fontSize: RFValue(15),
-                    fontWeight: '700',
+                    fontWeight: '800',
                     letterSpacing: 0.5,
                   }}
                 >
-                  {businessId ? 'Update' : 'Create'}
+                  {businessId ? '💾 Update' : '🔥 Create'}
                 </Text>
               )}
             </LinearGradient>
@@ -311,3 +435,8 @@ export default function CreateOwnBusiness() {
     </SafeAreaView>
   )
 }
+
+// ✅ Fix ESLint missing display name warning
+CreateOwnBusiness.displayName = 'CreateOwnBusiness'
+
+export default CreateOwnBusiness

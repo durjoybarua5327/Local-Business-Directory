@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router'; // added for navigation
 import { collection, getDocs } from 'firebase/firestore';
+
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
