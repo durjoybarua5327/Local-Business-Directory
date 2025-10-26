@@ -76,10 +76,10 @@ const styles = StyleSheet.create({
   imageShadow: {
     borderRadius: vw * 5,
     overflow: 'hidden',
-    shadowColor: RADISH,
-    shadowOpacity: 0.4,
-    shadowRadius: vw * 4,
-    shadowOffset: { width: 0, height: vh },
+    boxShadowColor: RADISH,
+    boxShadowOpacity: 0.4,
+    boxShadowRadius: vw * 4,
+    boxShadowOffset: { width: 0, height: vh },
     elevation: 8,
   },
   image: {

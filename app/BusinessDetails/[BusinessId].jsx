@@ -1,20 +1,20 @@
-import { 
-  View, 
-  Text, 
-  ActivityIndicator, 
-  ScrollView, 
-  StyleSheet, 
-  Image, 
-  TouchableOpacity, 
-  Linking, 
-  Share,
-  Dimensions
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { collection, doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Linking,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { db } from './../../Configs/FireBaseConfig';
-import React, { useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import Reviews from './Reviews';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -126,10 +126,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    boxShadowColor: '#000',
+    boxShadowOpacity: 0.2,
+    boxShadowRadius: 6,
+    boxShadowOffset: { width: 0, height: 3 },
   },
   image: {
     width: '100%',

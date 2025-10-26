@@ -1,16 +1,16 @@
+import { useRouter } from 'expo-router';
+import { collection, getDocs, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
+    Dimensions,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from './../../Configs/FireBaseConfig';
-import { useRouter } from 'expo-router';
 
 const RADISH = '#D32F2F';
 const { width: screenWidth } = Dimensions.get('window');
@@ -138,10 +138,10 @@ const styles = StyleSheet.create({
     borderRadius: vw * 3,
     marginRight: vw * 4,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: vw * 1.2,
-    shadowOffset: { width: 0, height: vw * 0.5 },
+    boxShadowColor: '#000',
+    boxShadowOpacity: 0.1,
+    boxShadowRadius: vw * 1.2,
+    boxShadowOffset: { width: 0, height: vw * 0.5 },
   },
   cardVertical: {
     width: screenWidth * 0.9,

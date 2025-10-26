@@ -1,34 +1,92 @@
-import React, { useState, useEffect } from 'react'
-import {
-  SafeAreaView,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Alert,
-  Platform,
-  StatusBar,
-  ActivityIndicator,
-  FlatList,
-} from 'react-native'
-import { RFValue } from 'react-native-responsive-fontsize'
+import EmojiPicker from 'emoji-picker-react'
 import { LinearGradient } from 'expo-linear-gradient'
-import { db } from '../../Configs/FireBaseConfig'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
-  collection,
   addDoc,
+  collection,
   doc,
   getDoc,
   getDocs,
   updateDoc,
 } from 'firebase/firestore'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+import { RFValue } from 'react-native-responsive-fontsize'
+import { db } from '../../Configs/FireBaseConfig'
 
 const PRIMARY_RED = '#ff4d4d'
 const LIGHT_RED = '#fff2f2'
 const GRADIENT_RED = ['#ff4d4d', '#ff7878', '#ff9a9e']
 
+// ✅ InputField Component
+const InputField = ({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  multiline = false,
+  numberOfLines = 1,
+}) => (
+  <View
+    style={{
+      marginBottom: 20,
+      backgroundColor: '#fff',
+      borderRadius: 18,
+      padding: 14,
+      boxShadowColor: '#ff4d4d',
+      boxShadowOpacity: 0.15,
+      boxShadowOffset: { width: 0, height: 2 },
+      boxShadowRadius: 6,
+      elevation: 4,
+    }}
+  >
+    <Text
+      style={{
+        fontSize: RFValue(14),
+        marginBottom: 8,
+        color: PRIMARY_RED,
+        fontWeight: '700',
+      }}
+    >
+      {label}
+    </Text>
+    <TextInput
+      placeholder={placeholder}
+      placeholderTextColor="#b3b3b3"
+      value={value}
+      onChangeText={onChangeText}
+      multiline={multiline}
+      numberOfLines={numberOfLines}
+      blurOnSubmit={false}
+      textAlignVertical={multiline ? 'top' : 'center'}
+      style={{
+        borderWidth: 1.2,
+        borderColor: '#ffd6d6',
+        borderRadius: 14,
+        padding: 12,
+        fontSize: RFValue(14),
+        backgroundColor: LIGHT_RED,
+        color: '#333',
+      }}
+    />
+  </View>
+)
+InputField.displayName = 'InputField'
+
+// ✅ Main Component
 const CreateOwnBusiness = () => {
   const { userEmail, businessId } = useLocalSearchParams()
   const router = useRouter()
@@ -39,7 +97,8 @@ const CreateOwnBusiness = () => {
   const [imageUrl, setImageUrl] = useState('')
   const [about, setAbout] = useState('')
   const [loading, setLoading] = useState(false)
-
+  const [emoji, setEmoji] = useState('🏪')
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [allCategories, setAllCategories] = useState([])
   const [filteredCategories, setFilteredCategories] = useState([])
 
@@ -57,6 +116,7 @@ const CreateOwnBusiness = () => {
           setCategory(data.category || '')
           setImageUrl(data.imageUrl || '')
           setAbout(data.about || '')
+          setEmoji(data.emoji || '🏪')
         }
       } catch (error) {
         console.error('Error fetching business:', error)
@@ -66,7 +126,7 @@ const CreateOwnBusiness = () => {
     fetchBusiness()
   }, [businessId])
 
-  // Fetch all categories once
+  // Fetch all categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -105,19 +165,47 @@ const CreateOwnBusiness = () => {
     setFilteredCategories([])
   }
 
+  // ✅ Strict Validation — all fields required
   const handleSubmit = async () => {
-    if (!name || !address || !category || !imageUrl || !about) {
-      Alert.alert('Error', 'Please fill in all fields before submitting!')
+    const trimmedName = name.trim()
+    const trimmedAddress = address.trim()
+    const trimmedCategory = category.trim()
+    const trimmedImageUrl = imageUrl.trim()
+    const trimmedAbout = about.trim()
+
+    if (
+      !trimmedName ||
+      !trimmedAddress ||
+      !trimmedCategory ||
+      !trimmedImageUrl ||
+      !trimmedAbout ||
+      !emoji ||
+      !userEmail
+    ) {
+      let missing = []
+      if (!trimmedName) missing.push('Business Name')
+      if (!trimmedAddress) missing.push('Address')
+      if (!trimmedCategory) missing.push('Category')
+      if (!trimmedImageUrl) missing.push('Image URL')
+      if (!trimmedAbout) missing.push('About / Description')
+      if (!emoji) missing.push('Emoji/Icon')
+      if (!userEmail) missing.push('User Email')
+
+      Alert.alert(
+        'Missing Information ⚠️',
+        `Please fill in the following:\n\n${missing.join('\n')}`
+      )
       return
     }
 
     setLoading(true)
     const businessData = {
-      name,
-      address,
-      category,
-      imageUrl,
-      about,
+      name: trimmedName,
+      address: trimmedAddress,
+      category: trimmedCategory,
+      imageUrl: trimmedImageUrl,
+      about: trimmedAbout,
+      emoji,
       userEmail,
       updatedAt: new Date().toISOString(),
     }
@@ -126,14 +214,14 @@ const CreateOwnBusiness = () => {
       if (businessId) {
         const docRef = doc(db, 'Business List', businessId)
         await updateDoc(docRef, businessData)
-        Alert.alert('Success', 'Business Updated Successfully!')
+        Alert.alert('✅ Success', 'Business Updated Successfully!')
       } else {
         const colRef = collection(db, 'Business List')
         await addDoc(colRef, {
           ...businessData,
           createdAt: new Date().toISOString(),
         })
-        Alert.alert('Success', 'Business Created Successfully!')
+        Alert.alert('🎉 Success', 'Business Created Successfully!')
       }
 
       setName('')
@@ -141,6 +229,7 @@ const CreateOwnBusiness = () => {
       setCategory('')
       setImageUrl('')
       setAbout('')
+      setEmoji('🏪')
       router.back()
     } catch (error) {
       console.error('Firebase Error:', error)
@@ -149,62 +238,6 @@ const CreateOwnBusiness = () => {
       setLoading(false)
     }
   }
-
-  // ✅ Fixed "missing display name" + typing
-  const InputField = ({
-    label,
-    value,
-    onChangeText,
-    placeholder,
-    multiline = false,
-    numberOfLines = 1,
-  }) => (
-    <View
-      style={{
-        marginBottom: 20,
-        backgroundColor: '#fff',
-        borderRadius: 18,
-        padding: 14,
-        shadowColor: '#ff4d4d',
-        shadowOpacity: 0.15,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 6,
-        elevation: 4,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: RFValue(14),
-          marginBottom: 8,
-          color: PRIMARY_RED,
-          fontWeight: '700',
-        }}
-      >
-        {label}
-      </Text>
-      <TextInput
-        placeholder={placeholder}
-        placeholderTextColor="#b3b3b3"
-        value={value}
-        onChangeText={(text) => onChangeText(text)} // ✅ proper callback
-        multiline={multiline}
-        numberOfLines={numberOfLines}
-        blurOnSubmit={false}
-        textAlignVertical={multiline ? 'top' : 'center'}
-        style={{
-          borderWidth: 1.2,
-          borderColor: '#ffd6d6',
-          borderRadius: 14,
-          padding: 12,
-          fontSize: RFValue(14),
-          backgroundColor: LIGHT_RED,
-          color: '#333',
-        }}
-      />
-    </View>
-  )
-
-  InputField.displayName = 'InputField' // ✅ ESLint display-name fix
 
   return (
     <SafeAreaView
@@ -232,9 +265,9 @@ const CreateOwnBusiness = () => {
             paddingVertical: 25,
             marginBottom: 25,
             alignItems: 'center',
-            shadowColor: PRIMARY_RED,
-            shadowOpacity: 0.4,
-            shadowRadius: 12,
+            boxShadowColor: PRIMARY_RED,
+            boxShadowOpacity: 0.4,
+            boxShadowRadius: 12,
             elevation: 4,
           }}
         >
@@ -315,6 +348,90 @@ const CreateOwnBusiness = () => {
           </View>
         )}
 
+        {/* Emoji Selector */}
+        <View
+          style={{
+            backgroundColor: '#fff',
+            padding: 15,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: '#ffd6d6',
+            marginBottom: 20,
+            elevation: 4,
+            boxShadowColor: PRIMARY_RED,
+            boxShadowOpacity: 0.1,
+          }}
+        >
+          <Text
+            style={{
+              color: PRIMARY_RED,
+              fontWeight: '700',
+              fontSize: RFValue(14),
+              marginBottom: 10,
+            }}
+          >
+            Choose Category Icon
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowEmojiPicker(true)}
+            style={{
+              backgroundColor: LIGHT_RED,
+              padding: 12,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontSize: RFValue(28) }}>{emoji}</Text>
+            <Text
+              style={{
+                fontSize: RFValue(12),
+                color: '#666',
+                marginTop: 5,
+              }}
+            >
+              Tap to Change
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Emoji Picker Modal */}
+        <Modal visible={showEmojiPicker} animationType="slide" transparent>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: '#fff',
+                borderRadius: 20,
+                padding: 10,
+                width: '90%',
+                height: '60%',
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setShowEmojiPicker(false)}
+                style={{ alignSelf: 'flex-end', marginBottom: 10 }}
+              >
+                <Text style={{ fontSize: RFValue(18), color: PRIMARY_RED }}>✖</Text>
+              </TouchableOpacity>
+              <EmojiPicker
+                onEmojiClick={(e) => {
+                  setEmoji(e.emoji)
+                  setShowEmojiPicker(false)
+                }}
+                width={'100%'}
+                height={'90%'}
+              />
+            </View>
+          </View>
+        </Modal>
+
         <InputField
           label="Image URL *"
           placeholder="Paste an image URL"
@@ -324,7 +441,7 @@ const CreateOwnBusiness = () => {
 
         <InputField
           label="About / Description *"
-          placeholder="Write a detailed description..."
+          placeholder="Write a detailed about your shop and items you sell..."
           value={about}
           onChangeText={setAbout}
           multiline
@@ -341,10 +458,6 @@ const CreateOwnBusiness = () => {
               padding: 15,
               borderWidth: 1,
               borderColor: '#ffcaca',
-              shadowColor: PRIMARY_RED,
-              shadowOpacity: 0.1,
-              shadowRadius: 6,
-              elevation: 3,
             }}
           >
             <Text style={{ fontSize: RFValue(13), color: '#777' }}>
@@ -374,12 +487,6 @@ const CreateOwnBusiness = () => {
               paddingVertical: 15,
               borderRadius: 16,
               alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#ff4d4d',
-              shadowOpacity: 0.15,
-              shadowOffset: { width: 0, height: 3 },
-              shadowRadius: 4,
-              elevation: 3,
             }}
           >
             <Text
@@ -407,11 +514,6 @@ const CreateOwnBusiness = () => {
                 paddingVertical: 15,
                 borderRadius: 16,
                 alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: PRIMARY_RED,
-                shadowOpacity: 0.4,
-                shadowRadius: 10,
-                elevation: 4,
               }}
             >
               {loading ? (
@@ -436,7 +538,5 @@ const CreateOwnBusiness = () => {
   )
 }
 
-// ✅ Fix ESLint missing display name warning
 CreateOwnBusiness.displayName = 'CreateOwnBusiness'
-
 export default CreateOwnBusiness

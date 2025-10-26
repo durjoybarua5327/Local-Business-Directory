@@ -1,22 +1,23 @@
-import { useUser, useClerk } from '@clerk/clerk-expo'
-import React, { useState, useRef } from 'react'
+import { useClerk, useUser } from '@clerk/clerk-expo'
+import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
+import { useRouter } from 'expo-router'
+import { useRef, useState } from 'react'
 import {
-  Dimensions,
-  Image,
-  Platform,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-  Modal,
-  Animated,
+    Animated,
+    Dimensions,
+    Image,
+    Modal,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
-import { LinearGradient } from 'expo-linear-gradient'
-import { Ionicons } from '@expo/vector-icons'
-import { useRouter } from 'expo-router';
+import UserBusinessCard from '../CreateOwnBusinesses/UserBusinessCard.jsx'
 
 const { width, height } = Dimensions.get('window')
 const LIGHT_RED = '#ffe5e5'
@@ -79,9 +80,9 @@ export default function Profile() {
             padding: spacing * 2,
             marginVertical: spacing * 2,
             alignItems: 'center',
-            shadowColor: RED_ACCENT,
-            shadowOpacity: 0.3,
-            shadowRadius: 10,
+            boxShadowColor: RED_ACCENT,
+            boxShadowOpacity: 0.3,
+            boxShadowRadius: 10,
             elevation: 5,
           }}
         >
@@ -107,9 +108,9 @@ export default function Profile() {
                 backgroundColor: RED_ACCENT,
                 alignItems: 'center',
                 justifyContent: 'center',
-                shadowColor: RED_ACCENT,
-                shadowOpacity: 0.5,
-                shadowRadius: 8,
+                boxShadowColor: RED_ACCENT,
+                boxShadowOpacity: 0.5,
+                boxShadowRadius: 8,
                 elevation: 5,
               }}
             >
@@ -159,9 +160,9 @@ export default function Profile() {
             borderRadius: 20,
             padding: spacing * 2,
             marginBottom: spacing * 2,
-            shadowColor: '#000',
-            shadowOpacity: 0.1,
-            shadowRadius: 10,
+            boxShadowColor: '#000',
+            boxShadowOpacity: 0.1,
+            boxShadowRadius: 10,
             elevation: 5,
           }}
         >
@@ -195,6 +196,11 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* User Business Card */}
+        {user?.emailAddresses?.[0]?.emailAddress && (
+          <UserBusinessCard userEmail={user?.emailAddresses?.[0]?.emailAddress} />
+        )}
+
         {/* Sign In / Sign Out Button */}
         <TouchableOpacity
           onPress={() => (user ? handleSignOutPress() : openSignIn())}
@@ -211,9 +217,9 @@ export default function Profile() {
               justifyContent: 'center',
               paddingVertical: spacing,
               borderRadius: 12,
-              shadowColor: '#000',
-              shadowOpacity: 0.2,
-              shadowRadius: 6,
+              boxShadowColor: '#000',
+              boxShadowOpacity: 0.2,
+              boxShadowRadius: 6,
               elevation: 3,
             }}
           >
@@ -235,15 +241,13 @@ export default function Profile() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Create Your Own Account Button */}
+        {/* Create Your Own Business Button */}
         <TouchableOpacity
-          onPress={() => router.push({
-  pathname: '/CreateOwnBusinesses/CreateOwnBusiness', // match folder/file exactly
-  params: { userEmail: user?.emailAddresses?.[0]?.emailAddress }
-})
-
-
-
+          onPress={() =>
+            router.push({
+              pathname: '/CreateOwnBusinesses/CreateOwnBusiness',
+              params: { userEmail: user?.emailAddresses?.[0]?.emailAddress },
+            })
           }
           activeOpacity={0.8}
           style={{ marginBottom: spacing * 2 }}
@@ -258,14 +262,14 @@ export default function Profile() {
               justifyContent: 'center',
               paddingVertical: spacing,
               borderRadius: 12,
-              shadowColor: '#000',
-              shadowOpacity: 0.2,
-              shadowRadius: 6,
+              boxShadowColor: '#000',
+              boxShadowOpacity: 0.2,
+              boxShadowRadius: 6,
               elevation: 3,
             }}
           >
             <Ionicons
-              name='person-add-outline'
+              name="person-add-outline"
               size={RFValue(20)}
               color="#fff"
               style={{ marginRight: spacing / 2 }}
@@ -277,7 +281,7 @@ export default function Profile() {
                 fontFamily: 'Outfit-Bold',
               }}
             >
-              Create your own account
+              Create your own Business
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -288,9 +292,9 @@ export default function Profile() {
             backgroundColor: '#fff',
             borderRadius: 20,
             padding: spacing * 2,
-            shadowColor: '#000',
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
+            boxShadowColor: '#000',
+            boxShadowOpacity: 0.08,
+            boxShadowRadius: 8,
             elevation: 3,
           }}
         >
@@ -324,9 +328,9 @@ export default function Profile() {
               padding: 20,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
-              shadowColor: RED_ACCENT,
-              shadowOpacity: 0.4,
-              shadowRadius: 10,
+              boxShadowColor: RED_ACCENT,
+              boxShadowOpacity: 0.4,
+              boxShadowRadius: 10,
               elevation: 10,
             }}
           >

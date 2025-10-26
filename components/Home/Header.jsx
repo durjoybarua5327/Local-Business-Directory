@@ -2,14 +2,14 @@ import { useUser } from '@clerk/clerk-expo'
 import { Ionicons } from '@expo/vector-icons'
 import React from 'react'
 import {
-  Dimensions,
-  Image,
-  Platform,
-  SafeAreaView,
-  StatusBar,
-  Text,
-  TextInput,
-  View,
+    Dimensions,
+    Image,
+    Platform,
+    SafeAreaView,
+    StatusBar,
+    Text,
+    TextInput,
+    View,
 } from 'react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 
@@ -37,9 +37,9 @@ export default function Header() {
         backgroundColor: LIGHT_RED,
         borderBottomLeftRadius: 16,
         borderBottomRightRadius: 16,
-        shadowColor: RED_ACCENT,
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
+        boxShadowColor: RED_ACCENT,
+        boxShadowOpacity: 0.12,
+        boxShadowRadius: 8,
         elevation: 3,
       }}
     >
