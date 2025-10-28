@@ -9,11 +9,13 @@ import {
   getDocs,
   updateDoc,
 } from 'firebase/firestore'
+import * as ImagePicker from 'expo-image-picker'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Platform,
   SafeAreaView,
@@ -165,6 +167,32 @@ const CreateOwnBusiness = () => {
     setFilteredCategories([])
   }
 
+  // ✅ Pick Image from gallery
+  const pickImage = async () => {
+    try {
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync()
+      if (!permissionResult.granted) {
+        Alert.alert('Permission Required', 'Please allow access to your gallery.')
+        return
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      })
+
+      if (!result.canceled) {
+        const selectedImage = result.assets[0].uri
+        setImageUrl(selectedImage)
+      }
+    } catch (error) {
+      console.error('Image picker error:', error)
+    }
+  }
+
   // ✅ Strict Validation — all fields required
   const handleSubmit = async () => {
     const trimmedName = name.trim()
@@ -186,7 +214,7 @@ const CreateOwnBusiness = () => {
       if (!trimmedName) missing.push('Business Name')
       if (!trimmedAddress) missing.push('Address')
       if (!trimmedCategory) missing.push('Category')
-      if (!trimmedImageUrl) missing.push('Image URL')
+      if (!trimmedImageUrl) missing.push('Image')
       if (!trimmedAbout) missing.push('About / Description')
       if (!emoji) missing.push('Emoji/Icon')
       if (!userEmail) missing.push('User Email')
@@ -432,12 +460,56 @@ const CreateOwnBusiness = () => {
           </View>
         </Modal>
 
-        <InputField
-          label="Image URL *"
-          placeholder="Paste an image URL"
-          value={imageUrl}
-          onChangeText={setImageUrl}
-        />
+        {/* ✅ Image Picker */}
+        <View
+          style={{
+            marginBottom: 20,
+            backgroundColor: '#fff',
+            borderRadius: 18,
+            padding: 15,
+            borderWidth: 1,
+            borderColor: '#ffd6d6',
+            elevation: 4,
+          }}
+        >
+          <Text
+            style={{
+              color: PRIMARY_RED,
+              fontWeight: '700',
+              fontSize: RFValue(14),
+              marginBottom: 10,
+            }}
+          >
+            Business Image *
+          </Text>
+          <TouchableOpacity
+            onPress={pickImage}
+            style={{
+              backgroundColor: LIGHT_RED,
+              borderRadius: 14,
+              paddingVertical: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ color: PRIMARY_RED, fontWeight: '700' }}>
+              {imageUrl ? '📸 Change Image' : '🖼️ Pick an Image'}
+            </Text>
+          </TouchableOpacity>
+
+          {imageUrl ? (
+            <Image
+              source={{ uri: imageUrl }}
+              style={{
+                width: '100%',
+                height: 180,
+                borderRadius: 14,
+                marginTop: 12,
+              }}
+              resizeMode="cover"
+            />
+          ) : null}
+        </View>
 
         <InputField
           label="About / Description *"
