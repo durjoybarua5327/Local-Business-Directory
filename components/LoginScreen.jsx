@@ -1,4 +1,4 @@
-import { useOAuth } from "@clerk/clerk-expo";
+import { useOAuth, useAuth } from "@clerk/clerk-expo";
 import * as AuthSession from "expo-auth-session";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -24,23 +24,7 @@ const TEXT_RED = "#d42525";
 export default function LoginScreen() {
   const router = useRouter();
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
-
-  const onPress = async () => {
-    try {
-      const { createdSessionId, setActive } = await startOAuthFlow({
-        redirectUrl: AuthSession.makeRedirectUri({
-          useProxy: true,
-        }),
-      });
-
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        router.replace("/app_layout");
-      }
-    } catch (err) {
-      console.error("OAuth error:", err);
-    }
-  };
+  const { isSignedIn, user } = useAuth(); 
 
   React.useEffect(() => {
     WebBrowser.warmUpAsync();
@@ -48,6 +32,23 @@ export default function LoginScreen() {
       WebBrowser.coolDownAsync();
     };
   }, []);
+
+  // Navigate to main page once user is signed in
+  React.useEffect(() => {
+    if (isSignedIn && user) {
+      router.replace("/app_layout");
+    }
+  }, [isSignedIn, user, router]);
+
+  const onPress = async () => {
+    try {
+      await startOAuthFlow({
+        redirectUrl: AuthSession.makeRedirectUri({ useProxy: true }),
+      });
+    } catch (err) {
+      console.error("OAuth error:", err);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -95,8 +96,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   image: {
-    width: width * 0.6, // 60% of screen width
-    height: height * 0.5, // 50% of screen height
+    width: width * 0.6,
+    height: height * 0.5,
     borderRadius: 20,
     borderWidth: 3,
     borderColor: RED_ACCENT,
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   headerPrimary: {
-    fontSize: width * 0.055, // scales with screen width
+    fontSize: width * 0.055,
     fontWeight: "bold",
     color: TEXT_RED,
     textAlign: "center",
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
   },
   btn: {
     backgroundColor: RED_ACCENT,
-    paddingVertical: height * 0.018, // adjusts with height
+    paddingVertical: height * 0.018,
     borderRadius: 12,
     alignItems: "center",
     width: "100%",

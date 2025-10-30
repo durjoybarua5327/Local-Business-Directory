@@ -45,10 +45,6 @@ export default function Category() {
     router.push('/BusinessList/' + encodeURIComponent(category.name));
   };
 
-  // Calculate number of items per row dynamically
-  const itemWidth = vw * 20; // width of one category item including margin
-  const numColumns = viewAll ? Math.floor(width / itemWidth) : 1;
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -61,26 +57,37 @@ export default function Category() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        key={viewAll ? 'VERTICAL' : 'HORIZONTAL'} // forces re-render
-        data={categories}
-        keyExtractor={(item) => item.id}
-        horizontal={!viewAll}
-        numColumns={numColumns}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: vw * 2.5,
-        }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.item, viewAll && styles.itemVertical]}
-            onPress={() => onCategoryPress(item)}
-          >
-            <Image source={{ uri: item.icon }} style={styles.icon} />
-            <Text style={styles.name}>{item.name}</Text>
-          </TouchableOpacity>
-        )}
-      />
+      {viewAll ? (
+        <View style={styles.verticalContainer}>
+          {categories.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[styles.item, styles.itemVertical]}
+              onPress={() => onCategoryPress(item)}
+            >
+              <Image source={{ uri: item.icon }} style={styles.icon} />
+              <Text style={styles.nameVertical}>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : (
+        <FlatList
+          data={categories}
+          keyExtractor={(item) => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalContainer}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.item, { width: Math.max(vw * 18, item.name.length * vw * 1.5) }]} // dynamic width
+              onPress={() => onCategoryPress(item)}
+            >
+              <Image source={{ uri: item.icon }} style={styles.icon} />
+              <Text style={styles.nameHorizontal}>{item.name}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -107,14 +114,24 @@ const styles = StyleSheet.create({
     fontSize: vw * 3.8,
     color: RADISH,
   },
+  horizontalContainer: {
+    paddingHorizontal: vw * 2.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  verticalContainer: {
+    paddingHorizontal: vw * 2.5,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
   item: {
-    width: vw * 14,
     marginRight: vw * 4,
     alignItems: 'center',
   },
   itemVertical: {
-    flex: 1,
-    margin: vw * 1,
+    width: vw * 24, // wider for vertical grid
+    margin: vw * 1.5,
     alignItems: 'center',
   },
   icon: {
@@ -123,7 +140,15 @@ const styles = StyleSheet.create({
     borderRadius: vw * 2,
     marginBottom: vh * 0.6,
   },
-  name: {
+  nameVertical: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: vw * 3.2,
+    textAlign: 'center',
+    color: '#333',
+    flexShrink: 1,
+    flexWrap: 'wrap',
+  },
+  nameHorizontal: {
     fontFamily: 'Outfit-Regular',
     fontSize: vw * 3.2,
     textAlign: 'center',

@@ -44,7 +44,7 @@ export default function Header() {
       }}
     >
       <View style={{ paddingHorizontal: horizontalPadding, paddingBottom: spacing * 2 }}>
-=        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing }}>
           {imageUrl ? (
             <Image
               source={{ uri: imageUrl }}

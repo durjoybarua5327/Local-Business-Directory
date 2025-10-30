@@ -1,14 +1,14 @@
 import { useRouter } from 'expo-router';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-    Dimensions,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { db } from './../../Configs/FireBaseConfig';
 
@@ -18,7 +18,7 @@ const vw = screenWidth / 100;
 
 export default function BusinessList() {
   const [businesses, setBusinesses] = useState([]);
-  const [viewAll, setViewAll] = useState(false); // <-- controls layout
+  const [viewAll, setViewAll] = useState(false);
   const router = useRouter();
 
   const getAverageRating = (business) => {
@@ -30,26 +30,28 @@ export default function BusinessList() {
     return total / business.reviews.length;
   };
 
-  const GetBusinesses = async () => {
-    try {
-      const q = query(collection(db, 'Business List'));
-      const querySnapshot = await getDocs(q);
-      const items = [];
-      querySnapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() });
-      });
-
-      const popularBusinesses = items.filter(
-        (b) => getAverageRating(b) >= 4
-      );
-      setBusinesses(popularBusinesses);
-    } catch (error) {
-      console.error('Error fetching Business List:', error);
-    }
-  };
-
   useEffect(() => {
-    GetBusinesses();
+    const q = query(collection(db, 'Business List'));
+
+    // Listen to real-time updates
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const items = [];
+        querySnapshot.forEach((doc) => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+
+        const popularBusinesses = items.filter((b) => getAverageRating(b) >= 4);
+        setBusinesses(popularBusinesses);
+      },
+      (error) => {
+        console.error('Error fetching Business List:', error);
+      }
+    );
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
 
   const onBusinessPress = (business) => {
@@ -60,7 +62,6 @@ export default function BusinessList() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Popular Business</Text>
-
         <TouchableOpacity onPress={() => setViewAll(!viewAll)}>
           <Text style={styles.viewAll}>
             {viewAll ? 'Show Less' : 'View All'}
@@ -68,45 +69,78 @@ export default function BusinessList() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        key={viewAll ? 'VERTICAL' : 'HORIZONTAL'} // forces re-render
-        data={businesses}
-        keyExtractor={(item) => item.id}
-        horizontal={!viewAll}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: vw * 2.5,
-          alignItems: viewAll ? 'center' : 'flex-start',
-        }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.card, viewAll && styles.cardVertical]}
-            onPress={() => onBusinessPress(item)}
-          >
-            <Image source={{ uri: item.imageUrl }} style={styles.image} />
-            <View style={styles.infoBox}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.location}>{item.address}</Text>
+      {viewAll ? (
+        <View style={{ paddingHorizontal: vw * 2.5 }}>
+          {businesses.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[styles.card, styles.cardVertical]}
+              onPress={() => onBusinessPress(item)}
+            >
+              <Image source={{ uri: item.imageUrl }} style={styles.image} />
+              <View style={styles.infoBox}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.location}>{item.address}</Text>
 
-              <View style={styles.bottomRow}>
-                <View style={styles.ratingRow}>
-                  <Image
-                    source={require('./../../assets/images/star.png')}
-                    style={styles.star}
-                  />
-                  <Text style={styles.rating}>
-                    ⭐ {getAverageRating(item).toFixed(1)}
-                    {item.reviews?.length ? ` (${item.reviews.length})` : ''}
-                  </Text>
-                </View>
-                <View style={styles.categoryBox}>
-                  <Text style={styles.categoryText}>{item.category}</Text>
+                <View style={styles.bottomRow}>
+                  <View style={styles.ratingRow}>
+                    <Image
+                      source={require('./../../assets/images/star.png')}
+                      style={styles.star}
+                    />
+                    <Text style={styles.rating}>
+                      ⭐ {getAverageRating(item).toFixed(1)}
+                      {item.reviews?.length ? ` (${item.reviews.length})` : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.categoryBox}>
+                    <Text style={styles.categoryText}>{item.category}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : (
+        <FlatList
+          data={businesses}
+          keyExtractor={(item) => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: vw * 2.5,
+            alignItems: 'flex-start',
+          }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.card]}
+              onPress={() => onBusinessPress(item)}
+            >
+              <Image source={{ uri: item.imageUrl }} style={styles.image} />
+              <View style={styles.infoBox}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.location}>{item.address}</Text>
+
+                <View style={styles.bottomRow}>
+                  <View style={styles.ratingRow}>
+                    <Image
+                      source={require('./../../assets/images/star.png')}
+                      style={styles.star}
+                    />
+                    <Text style={styles.rating}>
+                      ⭐ {getAverageRating(item).toFixed(1)}
+                      {item.reviews?.length ? ` (${item.reviews.length})` : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.categoryBox}>
+                    <Text style={styles.categoryText}>{item.category}</Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -146,7 +180,7 @@ const styles = StyleSheet.create({
   cardVertical: {
     width: screenWidth * 0.9,
     marginBottom: vw * 4,
-    alignSelf: 'center', // centers the card in vertical list
+    alignSelf: 'center',
   },
   image: {
     width: '100%',

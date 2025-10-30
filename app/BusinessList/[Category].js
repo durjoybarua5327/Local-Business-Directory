@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StatusBar, ActivityIndicator, StyleSheet } from 'react-native'; 
-import { useLocalSearchParams } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from './../../Configs/FireBaseConfig';
+import { useLocalSearchParams } from 'expo-router';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, View } from 'react-native';
 import BusinessListCard from '../../components/BusinessList/BusinessListCard';
+import { db } from './../../Configs/FireBaseConfig';
 
 export default function BusinessListByCategory() {
   const { Category } = useLocalSearchParams();
@@ -25,30 +25,34 @@ export default function BusinessListByCategory() {
       },
       headerTintColor: '#fff',
     });
+  }, [navigation, Category]);
 
-    getBusinessList();
+  useEffect(() => {
+    const q = query(
+      collection(db, 'Business List'),
+      where('category', '==', Category)
+    );
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const businesses = [];
+        querySnapshot.forEach((doc) => {
+          businesses.push({ id: doc.id, ...doc.data() });
+        });
+        setBusinesslist(businesses);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching business list snapshot: ', error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, [Category]);
-
-  const getBusinessList = async () => {
-    setLoading(true);
-    try {
-      const q = query(
-        collection(db, 'Business List'),
-        where('category', '==', Category)
-      );
-      const querySnapshot = await getDocs(q);
-
-      const businesses = [];
-      querySnapshot.forEach((doc) => {
-        businesses.push({ id: doc.id, ...doc.data() });
-      });
-
-      setBusinesslist(businesses);
-    } catch (error) {
-      console.error("Error fetching business list: ", error);
-    }
-    setLoading(false);
-  };
+  
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>

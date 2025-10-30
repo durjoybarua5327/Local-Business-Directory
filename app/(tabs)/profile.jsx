@@ -196,9 +196,14 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* User Business Card */}
+        {/* User Business Card with View button */}
         {user?.emailAddresses?.[0]?.emailAddress && (
-          <UserBusinessCard userEmail={user?.emailAddresses?.[0]?.emailAddress} />
+          <UserBusinessCard 
+            userEmail={user?.emailAddresses?.[0]?.emailAddress} 
+            onView={(businessId) =>
+              router.push('/BusinessDetails/' + encodeURIComponent(businessId))
+            }
+          />
         )}
 
         {/* Sign In / Sign Out Button */}

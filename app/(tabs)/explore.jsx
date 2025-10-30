@@ -1,20 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // added for navigation
-import { collection, getDocs } from 'firebase/firestore';
-
-import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { db } from './../../Configs/FireBaseConfig';
@@ -27,7 +26,19 @@ const LIGHT_RED = '#ffeaea';
 const RED_ACCENT = '#ff6f6f';
 const TEXT_RED = '#d42525';
 
-// Category Component fetching from Firebase
+// Helper function to extract place name from Google Maps URL
+const extractPlaceName = (url) => {
+  try {
+    const searchParams = new URL(url).searchParams;
+    let query = searchParams.get('q');
+    if (query) return query;
+    return '';
+  } catch (_error) {
+    return '';
+  }
+};
+
+// Category Component fetching unique categories from "Business List"
 const Category = ({ selectedCategory, setSelectedCategory }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,17 +46,40 @@ const Category = ({ selectedCategory, setSelectedCategory }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'Category'));
-        const fetchedCategories = querySnapshot.docs.map((doc) => doc.data().name);
-        // Add "All" option at the beginning
-        setCategories(['All', ...fetchedCategories]);
+        const q = collection(db, 'Business List');
+        const unsubscribe = onSnapshot(
+          q,
+          (querySnapshot) => {
+            // Extract unique categories
+            const uniqueCategories = new Set();
+            querySnapshot.docs.forEach((doc) => {
+              const data = doc.data();
+              if (data.category) uniqueCategories.add(data.category);
+            });
+
+            setCategories(['All', ...Array.from(uniqueCategories)]);
+            setLoading(false);
+          },
+          (error) => {
+            console.error('Error fetching businesses snapshot for categories:', error);
+            setLoading(false);
+          }
+        );
+
+        return unsubscribe;
       } catch (error) {
-        console.error('Error fetching categories:', error);
-      } finally {
+        console.error('Error fetching categories from businesses:', error);
         setLoading(false);
       }
     };
-    fetchCategories();
+
+    const unsubPromise = fetchCategories();
+    return () => {
+      if (typeof unsubPromise === 'function') unsubPromise();
+      else if (unsubPromise && typeof unsubPromise.then === 'function') {
+        unsubPromise.then((u) => { if (typeof u === 'function') u(); }).catch(() => {});
+      }
+    };
   }, []);
 
   if (loading) return <ActivityIndicator color={RED_ACCENT} style={{ marginVertical: 10 }} />;
@@ -76,13 +110,13 @@ const Category = ({ selectedCategory, setSelectedCategory }) => {
 };
 
 export default function Explore() {
-  const router = useRouter(); // initialize router
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedReviews, setSelectedReviews] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('All'); // Default to All
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   // Navigate to BusinessDetails on press
   const onBusinessPress = (business) => {
@@ -92,52 +126,66 @@ export default function Explore() {
   useEffect(() => {
     const fetchBusinesses = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'Business List'));
-        const fetchedData = querySnapshot.docs.map((doc) => {
-          const docData = doc.data();
-          const reviews = Array.isArray(docData.reviews) ? docData.reviews : [];
-          const avgRating =
-            reviews.length > 0
-              ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-              : null;
-          return {
-            id: doc.id,
-            name: docData.name || 'Unnamed',
-            about: docData.about || '',
-            address: docData.address || 'No Address',
-            category: docData.category || '',
-            imageUrl: docData.imageUrl || null,
-            website: docData.website || '',
-            reviews,
-            avgRating,
-            firstReview: reviews.length > 0 ? reviews[0] : null,
-          };
-        });
-        setBusinesses(fetchedData);
+        const q = collection(db, 'Business List');
+        const unsubscribe = onSnapshot(
+          q,
+          (querySnapshot) => {
+            const fetchedData = querySnapshot.docs.map((doc) => {
+              const docData = doc.data();
+              const reviews = Array.isArray(docData.reviews) ? docData.reviews : [];
+              const avgRating =
+                reviews.length > 0
+                  ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+                  : '0';
+              return {
+                id: doc.id,
+                name: docData.name || 'Unnamed',
+                about: docData.about || '',
+                address: docData.address || 'No Address',
+                category: docData.category || '',
+                imageUrl: docData.imageUrl || null,
+                website: docData.website || '',
+                reviews,
+                avgRating,
+                firstReview: reviews.length > 0 ? reviews[0] : null,
+              };
+            });
+            setBusinesses(fetchedData);
+            setLoading(false);
+          },
+          (error) => {
+            console.error('Error fetching businesses snapshot:', error);
+            setLoading(false);
+          }
+        );
+        return unsubscribe;
       } catch (error) {
         console.error('Error fetching businesses:', error);
-      } finally {
-        setLoading(false);
       }
     };
-    fetchBusinesses();
+    const unsubPromise = fetchBusinesses();
+    return () => {
+      if (typeof unsubPromise === 'function') unsubPromise();
+      else if (unsubPromise && typeof unsubPromise.then === 'function') {
+        unsubPromise.then((u) => { if (typeof u === 'function') u(); }).catch(() => {});
+      }
+    };
   }, []);
 
-  // Filter by search and category
+  // Filter by search (location) and category
   const filteredData = businesses.filter((item) => {
     const searchLower = search.toLowerCase().trim();
-    const address = item.address ? item.address.toLowerCase() : '';
-    const matchesSearch = address.includes(searchLower);
+    const placeName = extractPlaceName(item.address).toLowerCase();
+    const matchesSearch = placeName.includes(searchLower);
     const matchesCategory =
       selectedCategory && selectedCategory !== 'All' ? item.category === selectedCategory : true;
     return matchesSearch && matchesCategory;
   });
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+  const ListHeader = useMemo(() => (
+    <>
       <Text style={styles.title}>Explore Businesses</Text>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Ionicons
           name="search"
@@ -151,14 +199,14 @@ export default function Explore() {
           placeholderTextColor={RED_ACCENT}
           value={search}
           onChangeText={setSearch}
+          autoCorrect={false}
+          autoCapitalize="none"
         />
       </View>
 
-      {/* Category Component */}
       <Category selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
 
-      {/* Dynamic Heading for business list with icon */}
-      {!loading && filteredData.length > 0 && (
+      {filteredData.length > 0 && (
         <View style={styles.sectionTitleContainer}>
           <Ionicons
             name="location-sharp"
@@ -173,45 +221,45 @@ export default function Explore() {
           </Text>
         </View>
       )}
+    </>
+  ), [search, selectedCategory, filteredData.length]);
 
-      {/* Business List */}
-      {loading ? (
-        <ActivityIndicator size="large" color={RED_ACCENT} style={{ marginTop: 20 }} />
-      ) : filteredData.length === 0 ? (
-        <Text style={{ textAlign: 'center', color: TEXT_RED, marginTop: 20 }}>
-          No businesses found
-        </Text>
-      ) : (
-        <FlatList
-          data={filteredData}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => onBusinessPress(item)}>
-              {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
-              <View style={styles.cardContent}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.address}>{item.address}</Text>
-                {item.avgRating && <Text style={styles.review}>Rating: ⭐{item.avgRating}/5</Text>}
-                {/* Show View Reviews button when reviews exist */}
-                {item.reviews && item.reviews.length > 0 && (
-                  <TouchableOpacity
-                    style={styles.viewReviewsBtn}
-                    onPress={() => {
-                      setSelectedReviews(item.reviews);
-                      setModalVisible(true);
-                    }}
-                  >
-                    <Text style={styles.viewReviewsText}>View Reviews</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      )}
+  if (loading) {
+    return <ActivityIndicator size="large" color={RED_ACCENT} style={{ marginTop: 20 }} />;
+  }
 
-      {/* Reviews Modal */}
+  return (
+    <>
+      <FlatList
+        data={filteredData}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.card} onPress={() => onBusinessPress(item)}>
+            {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
+            <View style={styles.cardContent}>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.address}>{extractPlaceName(item.address) || 'No Address'}</Text>
+              <Text style={styles.review}>Rating: ⭐{item.avgRating}/5</Text>
+              <TouchableOpacity
+                style={styles.viewReviewsBtn}
+                onPress={() => {
+                  setSelectedReviews(item.reviews || []);
+                  setModalVisible(true);
+                }}
+              >
+                <Text style={styles.viewReviewsText}>View Reviews</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        )}
+        style={styles.flatList}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={ListHeader}
+        ListFooterComponent={() => <View style={{ height: 30 }} />}
+        nestedScrollEnabled={true}  // ✅ fixes scroll issue
+      />
+
       <Modal
         animationType="slide"
         transparent={true}
@@ -244,18 +292,19 @@ export default function Explore() {
           </View>
         </View>
       </Modal>
-
-      <View style={{ height: 30 }} />
-    </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flatList: {
     flex: 1,
-    paddingHorizontal: horizontalPadding,
     backgroundColor: '#fff',
+  },
+  contentContainer: {
+    paddingHorizontal: horizontalPadding,
     paddingTop: spacing * 4,
+    backgroundColor: '#fff',
   },
   title: {
     fontSize: RFValue(24),
@@ -273,11 +322,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing * 1.5,
     borderWidth: 1,
     borderColor: RED_ACCENT,
-    boxShadowColor: TEXT_RED,
-    boxShadowOffset: { width: 0, height: 2 },
-    boxShadowOpacity: 0.1,
-    boxShadowRadius: 3,
-    elevation: 2,
     marginBottom: spacing * 2,
   },
   searchInput: {
@@ -299,9 +343,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     borderBottomColor: RED_ACCENT,
     paddingBottom: 4,
-    textShadowColor: 'rgba(255, 111, 111, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
   card: {
     flexDirection: 'row',
@@ -309,10 +350,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: spacing * 2,
     padding: spacing * 2,
-    boxShadowColor: '#000',
-    boxShadowOffset: { width: 0, height: 1 },
-    boxShadowOpacity: 0.1,
-    boxShadowRadius: 2,
     elevation: 2,
   },
   image: {

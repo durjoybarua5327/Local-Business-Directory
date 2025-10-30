@@ -1,33 +1,34 @@
-import { useEffect, useState } from 'react'
-import { View, Text, Image, TouchableOpacity, ActivityIndicator, FlatList, Alert } from 'react-native'
-import { RFValue } from 'react-native-responsive-fontsize'
 import { useRouter } from 'expo-router'
-import { collection, getDocs, query, where, doc, deleteDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Alert, Image, Linking, Text, TouchableOpacity, View } from 'react-native'
+import { RFValue } from 'react-native-responsive-fontsize'
 import { db } from '../../Configs/FireBaseConfig'
 
 const RED_ACCENT = '#ff6f6f'
 const LIGHT_RED = '#fff0f0'
 
-export default function UserBusinessCard({ userEmail }) {
+export default function UserBusinessCard({ userEmail, onView }) {
   const [businesses, setBusinesses] = useState([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    const fetchBusiness = async () => {
-      if (!userEmail) return
-      try {
-        const q = query(collection(db, 'Business List'), where('userEmail', '==', userEmail))
-        const snapshot = await getDocs(q)
-        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    if (!userEmail) return
+    const q = query(collection(db, 'Business List'), where('userEmail', '==', userEmail))
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
         setBusinesses(docs)
-      } catch (error) {
-        console.error('Error fetching business:', error)
-      } finally {
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Error fetching business snapshot:', error)
         setLoading(false)
       }
-    }
-    fetchBusiness()
+    )
+    return () => unsubscribe()
   }, [userEmail])
 
   const handleDelete = (id) => {
@@ -60,14 +61,10 @@ export default function UserBusinessCard({ userEmail }) {
     return <Text style={{ textAlign: 'center', color: RED_ACCENT, marginVertical: 20 }}>You don&apos;t have a business yet</Text>
 
   return (
-    <FlatList
-      data={businesses}
-      keyExtractor={(item) => item.id}
-      horizontal={false}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingVertical: 10 }}
-      renderItem={({ item }) => (
+    <View style={{ paddingVertical: 10 }}>
+      {businesses.map((item) => (
         <View
+          key={item.id}
           style={{
             flexDirection: 'row',
             backgroundColor: LIGHT_RED,
@@ -97,9 +94,8 @@ export default function UserBusinessCard({ userEmail }) {
               <Text style={{ fontSize: RFValue(14), fontFamily: 'Outfit-SemiBold', color: '#555', marginTop: 4 }}>
                 Category: {item.category}
               </Text>
-              <Text style={{ fontSize: RFValue(12), color: '#777', marginTop: 4 }} numberOfLines={2}>
-                Address: {item.address}
-              </Text>
+              {/* Address: if it's a map/link show cleaned label and make tappable */}
+              <AddressView address={item.address} />
               <Text style={{ fontSize: RFValue(12), color: '#777', marginTop: 4 }} numberOfLines={2}>
                 About: {item.about}
               </Text>
@@ -108,7 +104,13 @@ export default function UserBusinessCard({ userEmail }) {
             {/* Buttons */}
             <View style={{ flexDirection: 'row', marginTop: 10, gap: 10 }}>
               <TouchableOpacity
-                onPress={() => router.push(`/business/${item.id}`)}
+                  onPress={() => {
+                    if (typeof onView === 'function') {
+                      onView(item.id)
+                    } else {
+                      router.push(`/BusinessDetails/${encodeURIComponent(item.id)}`)
+                    }
+                  }}
                 activeOpacity={0.8}
                 style={{
                   flex: 1,
@@ -141,7 +143,73 @@ export default function UserBusinessCard({ userEmail }) {
             </View>
           </View>
         </View>
-      )}
-    />
+      ))}
+    </View>
+  )
+}
+
+// Small helper component to format addresses and open map links
+function AddressView({ address }) {
+  const styles = { text: { fontSize: RFValue(12), color: '#777', marginTop: 4 } }
+
+  const isUrl = (str) => {
+    if (!str) return false
+    try {
+      // URL constructor will throw for non-URLs
+      // also allow strings that start with www.
+      new URL(str.startsWith('http') ? str : 'https://' + str)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const formatAddress = (addr) => {
+    if (!addr) return ''
+    try {
+      const url = new URL(addr.startsWith('http') ? addr : 'https://' + addr)
+
+      // Try to extract common human-readable parts from Google Maps links
+      const q = url.searchParams.get('q')
+      if (q) return decodeURIComponent(q)
+
+      const match = url.pathname.match(/\/place\/([^\/]+)/)
+      if (match && match[1]) return decodeURIComponent(match[1].replace(/\+/g, ' '))
+
+      // fallback: host + path (shortened)
+      const host = url.hostname.replace(/^www\./, '')
+      let label = host + (url.pathname && url.pathname !== '/' ? ' ' + decodeURIComponent(url.pathname).replace(/\//g, ' ') : '')
+      return label.length > 80 ? label.slice(0, 77) + '...' : label
+    } catch {
+      return addr
+    }
+  }
+
+  const openLink = async (url) => {
+    try {
+      const u = url.startsWith('http') ? url : 'https://' + url
+      const supported = await Linking.canOpenURL(u)
+      if (supported) await Linking.openURL(u)
+      else Alert.alert('Cannot open link', 'This link is not supported on your device.')
+    } catch (err) {
+      console.error('Open link error', err)
+      Alert.alert('Error', 'Failed to open the link.')
+    }
+  }
+
+  if (isUrl(address)) {
+    return (
+      <TouchableOpacity onPress={() => openLink(address)} activeOpacity={0.7}>
+        <Text style={styles.text} numberOfLines={2}>
+          Address: {formatAddress(address)}
+        </Text>
+      </TouchableOpacity>
+    )
+  }
+
+  return (
+    <Text style={styles.text} numberOfLines={2}>
+      Address: {address}
+    </Text>
   )
 }

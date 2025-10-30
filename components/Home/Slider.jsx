@@ -1,4 +1,4 @@
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, FlatList, Image, StyleSheet, Text, View } from 'react-native';
 import { db } from './../../Configs/FireBaseConfig';
@@ -16,19 +16,37 @@ export default function Slider() {
   const GetSlider = async () => {
     try {
       const q = query(collection(db, 'Slider'));
-      const querySnapshot = await getDocs(q);
-      const items = [];
-      querySnapshot.forEach((doc) => {
-        items.push(doc.data());
-      });
-      setSliderslist(items);
+      const unsubscribe = onSnapshot(
+        q,
+        (querySnapshot) => {
+          const items = [];
+          querySnapshot.forEach((doc) => {
+            items.push(doc.data());
+          });
+          setSliderslist(items);
+        },
+        (error) => {
+          console.error('Error fetching Slider snapshot:', error);
+        }
+      );
+      return unsubscribe;
     } catch (error) {
       console.error('Error fetching Slider data:', error);
     }
   };
 
   useEffect(() => {
-    GetSlider();
+    let unsub = null;
+    (async () => {
+      try {
+        unsub = await GetSlider();
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
   }, []);
 
   return (

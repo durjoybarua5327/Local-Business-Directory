@@ -1,4 +1,4 @@
-import EmojiPicker from 'emoji-picker-react'
+import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
@@ -9,14 +9,11 @@ import {
   getDocs,
   updateDoc,
 } from 'firebase/firestore'
-import * as ImagePicker from 'expo-image-picker'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Image,
-  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -33,7 +30,6 @@ const PRIMARY_RED = '#ff4d4d'
 const LIGHT_RED = '#fff2f2'
 const GRADIENT_RED = ['#ff4d4d', '#ff7878', '#ff9a9e']
 
-// ✅ InputField Component
 const InputField = ({
   label,
   value,
@@ -48,10 +44,10 @@ const InputField = ({
       backgroundColor: '#fff',
       borderRadius: 18,
       padding: 14,
-      boxShadowColor: '#ff4d4d',
-      boxShadowOpacity: 0.15,
-      boxShadowOffset: { width: 0, height: 2 },
-      boxShadowRadius: 6,
+      shadowColor: '#ff4d4d',
+      shadowOpacity: 0.15,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 6,
       elevation: 4,
     }}
   >
@@ -88,7 +84,23 @@ const InputField = ({
 )
 InputField.displayName = 'InputField'
 
-// ✅ Main Component
+const extractPlaceName = (url) => {
+  try {
+    const searchParams = new URL(url).searchParams
+    let query = searchParams.get('q')
+    if (query) {
+      query = query.replace(/location/gi, '').trim()
+      return query
+    }
+    const hashPart = url.split('#')[1] || ''
+    const match = hashPart.match(/rlimm=.*$/)
+    if (match) return decodeURIComponent(match[0].split('=')[1])
+    return ''
+  } catch (_error) {
+    return ''
+  }
+}
+
 const CreateOwnBusiness = () => {
   const { userEmail, businessId } = useLocalSearchParams()
   const router = useRouter()
@@ -98,13 +110,11 @@ const CreateOwnBusiness = () => {
   const [category, setCategory] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [about, setAbout] = useState('')
+  const [website, setWebsite] = useState('')
   const [loading, setLoading] = useState(false)
-  const [emoji, setEmoji] = useState('🏪')
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [allCategories, setAllCategories] = useState([])
   const [filteredCategories, setFilteredCategories] = useState([])
 
-  // Fetch business details if editing
   useEffect(() => {
     if (!businessId) return
     const fetchBusiness = async () => {
@@ -118,7 +128,7 @@ const CreateOwnBusiness = () => {
           setCategory(data.category || '')
           setImageUrl(data.imageUrl || '')
           setAbout(data.about || '')
-          setEmoji(data.emoji || '🏪')
+          setWebsite(data.website || '')
         }
       } catch (error) {
         console.error('Error fetching business:', error)
@@ -128,7 +138,6 @@ const CreateOwnBusiness = () => {
     fetchBusiness()
   }, [businessId])
 
-  // Fetch all categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -149,7 +158,6 @@ const CreateOwnBusiness = () => {
     fetchCategories()
   }, [])
 
-  // Filter category suggestions
   const handleCategoryChange = (text) => {
     setCategory(text)
     if (text.length > 0) {
@@ -167,7 +175,6 @@ const CreateOwnBusiness = () => {
     setFilteredCategories([])
   }
 
-  // ✅ Pick Image from gallery
   const pickImage = async () => {
     try {
       const permissionResult =
@@ -193,13 +200,13 @@ const CreateOwnBusiness = () => {
     }
   }
 
-  // ✅ Strict Validation — all fields required
   const handleSubmit = async () => {
     const trimmedName = name.trim()
     const trimmedAddress = address.trim()
     const trimmedCategory = category.trim()
     const trimmedImageUrl = imageUrl.trim()
     const trimmedAbout = about.trim()
+    const trimmedWebsite = website.trim()
 
     if (
       !trimmedName ||
@@ -207,16 +214,14 @@ const CreateOwnBusiness = () => {
       !trimmedCategory ||
       !trimmedImageUrl ||
       !trimmedAbout ||
-      !emoji ||
       !userEmail
     ) {
       let missing = []
       if (!trimmedName) missing.push('Business Name')
-      if (!trimmedAddress) missing.push('Address')
+      if (!trimmedAddress) missing.push('Address URL')
       if (!trimmedCategory) missing.push('Category')
       if (!trimmedImageUrl) missing.push('Image')
       if (!trimmedAbout) missing.push('About / Description')
-      if (!emoji) missing.push('Emoji/Icon')
       if (!userEmail) missing.push('User Email')
 
       Alert.alert(
@@ -233,7 +238,7 @@ const CreateOwnBusiness = () => {
       category: trimmedCategory,
       imageUrl: trimmedImageUrl,
       about: trimmedAbout,
-      emoji,
+      website: trimmedWebsite,
       userEmail,
       updatedAt: new Date().toISOString(),
     }
@@ -247,6 +252,7 @@ const CreateOwnBusiness = () => {
         const colRef = collection(db, 'Business List')
         await addDoc(colRef, {
           ...businessData,
+          reviews: [],
           createdAt: new Date().toISOString(),
         })
         Alert.alert('🎉 Success', 'Business Created Successfully!')
@@ -257,7 +263,7 @@ const CreateOwnBusiness = () => {
       setCategory('')
       setImageUrl('')
       setAbout('')
-      setEmoji('🏪')
+      setWebsite('')
       router.back()
     } catch (error) {
       console.error('Firebase Error:', error)
@@ -266,6 +272,8 @@ const CreateOwnBusiness = () => {
       setLoading(false)
     }
   }
+
+  const placeName = extractPlaceName(address)
 
   return (
     <SafeAreaView
@@ -276,6 +284,7 @@ const CreateOwnBusiness = () => {
       }}
     >
       <ScrollView
+        nestedScrollEnabled
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -283,7 +292,6 @@ const CreateOwnBusiness = () => {
           paddingBottom: 50,
         }}
       >
-        {/* Header */}
         <LinearGradient
           colors={GRADIENT_RED}
           start={{ x: 0, y: 0 }}
@@ -293,9 +301,9 @@ const CreateOwnBusiness = () => {
             paddingVertical: 25,
             marginBottom: 25,
             alignItems: 'center',
-            boxShadowColor: PRIMARY_RED,
-            boxShadowOpacity: 0.4,
-            boxShadowRadius: 12,
+            shadowColor: PRIMARY_RED,
+            shadowOpacity: 0.4,
+            shadowRadius: 12,
             elevation: 4,
           }}
         >
@@ -311,7 +319,6 @@ const CreateOwnBusiness = () => {
           </Text>
         </LinearGradient>
 
-        {/* Input Fields */}
         <InputField
           label="Business Name *"
           placeholder="Enter your business name"
@@ -320,21 +327,33 @@ const CreateOwnBusiness = () => {
         />
 
         <InputField
-          label="Address *"
-          placeholder="Enter business address"
+          label="Address URL *"
+          placeholder="Paste your business location URL (google Maps Link)"
           value={address}
           onChangeText={setAddress}
+          multiline={true}      
+          numberOfLines={3}
         />
+        {placeName ? (
+          <Text
+            style={{
+              marginBottom: 20,
+              color: '#555',
+              fontSize: RFValue(13),
+              fontStyle: 'italic',
+            }}
+          >
+            Detected Place: {placeName}
+          </Text>
+        ) : null}
 
-        {/* Category Field */}
         <InputField
           label="Category *"
-          placeholder="E.g., Restaurant, Store, Hospital"
+          placeholder="Ex: Restaurant, Store, Hospital"
           value={category}
           onChangeText={handleCategoryChange}
         />
 
-        {/* Category Suggestions */}
         {filteredCategories.length > 0 && (
           <View
             style={{
@@ -347,12 +366,10 @@ const CreateOwnBusiness = () => {
               maxHeight: 150,
             }}
           >
-            <FlatList
-              data={filteredCategories}
-              keyExtractor={(item, index) => index.toString()}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => (
+            <ScrollView keyboardShouldPersistTaps="handled">
+              {filteredCategories.map((item, idx) => (
                 <TouchableOpacity
+                  key={idx}
                   onPress={() => handleSelectCategory(item)}
                   style={{
                     paddingVertical: 10,
@@ -371,96 +388,11 @@ const CreateOwnBusiness = () => {
                     {item}
                   </Text>
                 </TouchableOpacity>
-              )}
-            />
+              ))}
+            </ScrollView>
           </View>
         )}
 
-        {/* Emoji Selector */}
-        <View
-          style={{
-            backgroundColor: '#fff',
-            padding: 15,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: '#ffd6d6',
-            marginBottom: 20,
-            elevation: 4,
-            boxShadowColor: PRIMARY_RED,
-            boxShadowOpacity: 0.1,
-          }}
-        >
-          <Text
-            style={{
-              color: PRIMARY_RED,
-              fontWeight: '700',
-              fontSize: RFValue(14),
-              marginBottom: 10,
-            }}
-          >
-            Choose Category Icon
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowEmojiPicker(true)}
-            style={{
-              backgroundColor: LIGHT_RED,
-              padding: 12,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: RFValue(28) }}>{emoji}</Text>
-            <Text
-              style={{
-                fontSize: RFValue(12),
-                color: '#666',
-                marginTop: 5,
-              }}
-            >
-              Tap to Change
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Emoji Picker Modal */}
-        <Modal visible={showEmojiPicker} animationType="slide" transparent>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: 'rgba(0,0,0,0.4)',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: '#fff',
-                borderRadius: 20,
-                padding: 10,
-                width: '90%',
-                height: '60%',
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => setShowEmojiPicker(false)}
-                style={{ alignSelf: 'flex-end', marginBottom: 10 }}
-              >
-                <Text style={{ fontSize: RFValue(18), color: PRIMARY_RED }}>✖</Text>
-              </TouchableOpacity>
-              <EmojiPicker
-                onEmojiClick={(e) => {
-                  setEmoji(e.emoji)
-                  setShowEmojiPicker(false)
-                }}
-                width={'100%'}
-                height={'90%'}
-              />
-            </View>
-          </View>
-        </Modal>
-
-        {/* ✅ Image Picker */}
         <View
           style={{
             marginBottom: 20,
@@ -497,7 +429,7 @@ const CreateOwnBusiness = () => {
             </Text>
           </TouchableOpacity>
 
-          {imageUrl ? (
+          {imageUrl && (
             <Image
               source={{ uri: imageUrl }}
               style={{
@@ -508,19 +440,26 @@ const CreateOwnBusiness = () => {
               }}
               resizeMode="cover"
             />
-          ) : null}
+          )}
         </View>
 
         <InputField
           label="About / Description *"
-          placeholder="Write a detailed about your shop and items you sell..."
+          placeholder="Write about your business..."
           value={about}
           onChangeText={setAbout}
-          multiline
-          numberOfLines={6}
+          multiline= {true}
+          numberOfLines={3}
+          style={{ minHeight: 100 }}
         />
 
-        {/* Associated Email */}
+        <InputField
+          label="Website URL"
+          placeholder="Paste your website link (optional)"
+          value={website}
+          onChangeText={setWebsite}
+        />
+
         {userEmail && (
           <View
             style={{
@@ -532,9 +471,7 @@ const CreateOwnBusiness = () => {
               borderColor: '#ffcaca',
             }}
           >
-            <Text style={{ fontSize: RFValue(13), color: '#777' }}>
-              Associated Email:
-            </Text>
+            <Text style={{ fontSize: RFValue(13), color: '#777' }}>Associated Email:</Text>
             <Text
               style={{
                 fontSize: RFValue(14),
@@ -548,7 +485,6 @@ const CreateOwnBusiness = () => {
           </View>
         )}
 
-        {/* Buttons */}
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <TouchableOpacity
             onPress={() => router.back()}

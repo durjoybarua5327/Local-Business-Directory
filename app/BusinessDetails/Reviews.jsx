@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Animated, FlatList, Image, Alert } from 'react-native';
-import { Rating } from 'react-native-ratings';
-import { useState, useEffect } from 'react';
-import { db } from './../../Configs/FireBaseConfig';
+import { useUser } from '@clerk/clerk-expo';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { useUser } from '@clerk/clerk-expo';  
+import { useEffect, useState } from 'react';
+import { Alert, Animated, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Rating } from 'react-native-ratings';
+import { db } from './../../Configs/FireBaseConfig';
 
 export default function Reviews({ businessId }) {
   const [rating, setRating] = useState(0);
@@ -176,45 +176,47 @@ export default function Reviews({ businessId }) {
         <Text style={styles.buttonText}>{editingIndex !== null ? 'Update Review' : 'Submit'}</Text>
       </TouchableOpacity>
 
-      {/* Reviews List */}
-      <FlatList
-        data={[...reviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))}
-        keyExtractor={(item, index) => index.toString()}
-        scrollEnabled={false}
-        style={styles.flatList}
-        renderItem={({ item }) => {
-          const actualIndex = reviews.findIndex(r => r.createdAt === item.createdAt);
-          return (
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewHeader}>
-                <Image source={{ uri: item.userImage }} style={styles.userImage} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.userName}>{item.userName}</Text>
-                  <View style={styles.ratingRow}>
-                    <Text style={styles.reviewRating}>⭐ {item.rating} / 5</Text>
-                    <Text style={styles.reviewDate}>
-                      {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </Text>
+      {/* Reviews List (rendered non-virtualized to avoid nesting VirtualizedList inside ScrollView) */}
+      <View style={[styles.flatList, { width: '100%' }]}> 
+        {[...reviews]
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .map((item, idx) => {
+            const actualIndex = reviews.findIndex((r) => r.createdAt === item.createdAt);
+            return (
+              <View key={idx} style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <Image source={{ uri: item.userImage }} style={styles.userImage} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.userName}>{item.userName}</Text>
+                    <View style={styles.ratingRow}>
+                      <Text style={styles.reviewRating}>⭐ {item.rating} / 5</Text>
+                      <Text style={styles.reviewDate}>
+                        {new Date(item.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-              <Text style={styles.reviewComment}>{item.comment}</Text>
+                <Text style={styles.reviewComment}>{item.comment}</Text>
 
-              {/* Edit & Delete buttons only for current user */}
-              {user && (user.fullName === item.userName || user.primaryEmailAddress?.emailAddress === item.userName) && (
-                <View style={styles.actionRow}>
-                  <TouchableOpacity onPress={() => handleEdit(actualIndex)}>
-                    <Text style={styles.editText}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDelete(actualIndex)}>
-                    <Text style={styles.deleteText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          );
-        }}
-      />
+                {/* Edit & Delete buttons only for current user */}
+                {user && (user.fullName === item.userName || user.primaryEmailAddress?.emailAddress === item.userName) && (
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity onPress={() => handleEdit(actualIndex)}>
+                      <Text style={styles.editText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDelete(actualIndex)}>
+                      <Text style={styles.deleteText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+      </View>
     </View>
   );
 }

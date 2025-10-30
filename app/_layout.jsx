@@ -4,7 +4,6 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { Text } from "react-native";
 import LoginScreen from "../components/LoginScreen";
-import LocationButton from "../components/LocationButton";  
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -26,7 +25,6 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
         </Stack>
-        {/* <LocationButton /> */}
       </SignedIn>
       <SignedOut>
         <LoginScreen />
