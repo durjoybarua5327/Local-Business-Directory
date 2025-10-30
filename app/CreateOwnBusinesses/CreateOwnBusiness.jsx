@@ -37,6 +37,7 @@ const InputField = ({
   placeholder,
   multiline = false,
   numberOfLines = 1,
+  keyboardType = 'default',
 }) => (
   <View
     style={{
@@ -69,6 +70,7 @@ const InputField = ({
       multiline={multiline}
       numberOfLines={numberOfLines}
       blurOnSubmit={false}
+      keyboardType={keyboardType}
       textAlignVertical={multiline ? 'top' : 'center'}
       style={{
         borderWidth: 1.2,
@@ -107,10 +109,12 @@ const CreateOwnBusiness = () => {
 
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
+  const [mapUrl, setMapUrl] = useState('')
   const [category, setCategory] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [about, setAbout] = useState('')
   const [website, setWebsite] = useState('')
+  const [mobile, setMobile] = useState('')
   const [loading, setLoading] = useState(false)
   const [allCategories, setAllCategories] = useState([])
   const [filteredCategories, setFilteredCategories] = useState([])
@@ -125,10 +129,12 @@ const CreateOwnBusiness = () => {
           const data = docSnap.data()
           setName(data.name || '')
           setAddress(data.address || '')
+          setMapUrl(data.mapUrl || '')
           setCategory(data.category || '')
           setImageUrl(data.imageUrl || '')
           setAbout(data.about || '')
           setWebsite(data.website || '')
+          setMobile(data.mobile || '')
         }
       } catch (error) {
         console.error('Error fetching business:', error)
@@ -200,29 +206,40 @@ const CreateOwnBusiness = () => {
     }
   }
 
+  const validateBangladeshiNumber = (number) => {
+    const cleaned = number.replace(/[\s-]/g, '')
+    return /^(\+8801[3-9]\d{8}|01[3-9]\d{8})$/.test(cleaned)
+  }
+
   const handleSubmit = async () => {
     const trimmedName = name.trim()
     const trimmedAddress = address.trim()
+    const trimmedMapUrl = mapUrl.trim()
     const trimmedCategory = category.trim()
     const trimmedImageUrl = imageUrl.trim()
     const trimmedAbout = about.trim()
     const trimmedWebsite = website.trim()
+    const trimmedMobile = mobile.trim()
 
     if (
       !trimmedName ||
       !trimmedAddress ||
+      !trimmedMapUrl ||
       !trimmedCategory ||
       !trimmedImageUrl ||
       !trimmedAbout ||
-      !userEmail
+      !userEmail ||
+      !trimmedMobile
     ) {
       let missing = []
       if (!trimmedName) missing.push('Business Name')
-      if (!trimmedAddress) missing.push('Address URL')
+      if (!trimmedAddress) missing.push('Address')
+      if (!trimmedMapUrl) missing.push('Map URL')
       if (!trimmedCategory) missing.push('Category')
       if (!trimmedImageUrl) missing.push('Image')
       if (!trimmedAbout) missing.push('About / Description')
       if (!userEmail) missing.push('User Email')
+      if (!trimmedMobile) missing.push('Mobile Number')
 
       Alert.alert(
         'Missing Information ⚠️',
@@ -231,14 +248,24 @@ const CreateOwnBusiness = () => {
       return
     }
 
+    if (!validateBangladeshiNumber(trimmedMobile)) {
+      Alert.alert(
+        'Invalid Mobile Number',
+        'Please enter a valid Bangladeshi mobile number starting with +880 or 01'
+      )
+      return
+    }
+
     setLoading(true)
     const businessData = {
       name: trimmedName,
       address: trimmedAddress,
+      mapUrl: trimmedMapUrl,
       category: trimmedCategory,
       imageUrl: trimmedImageUrl,
       about: trimmedAbout,
       website: trimmedWebsite,
+      mobile: trimmedMobile,
       userEmail,
       updatedAt: new Date().toISOString(),
     }
@@ -258,12 +285,15 @@ const CreateOwnBusiness = () => {
         Alert.alert('🎉 Success', 'Business Created Successfully!')
       }
 
+      // Reset form
       setName('')
       setAddress('')
+      setMapUrl('')
       setCategory('')
       setImageUrl('')
       setAbout('')
       setWebsite('')
+      setMobile('')
       router.back()
     } catch (error) {
       console.error('Firebase Error:', error)
@@ -273,7 +303,7 @@ const CreateOwnBusiness = () => {
     }
   }
 
-  const placeName = extractPlaceName(address)
+  const placeName = extractPlaceName(mapUrl)
 
   return (
     <SafeAreaView
@@ -327,13 +357,21 @@ const CreateOwnBusiness = () => {
         />
 
         <InputField
-          label="Address URL *"
-          placeholder="Paste your business location URL (google Maps Link)"
+          label="Address *"
+          placeholder="123/A, Agrabad, Chittagong, Bangladesh"
           value={address}
           onChangeText={setAddress}
-          multiline={true}      
+        />
+
+        <InputField
+          label="Map URL *"
+          placeholder="Paste your business location URL (Google Maps link)"
+          value={mapUrl}
+          onChangeText={setMapUrl}
+          multiline={true}
           numberOfLines={3}
         />
+
         {placeName ? (
           <Text
             style={{
@@ -393,6 +431,14 @@ const CreateOwnBusiness = () => {
           </View>
         )}
 
+        <InputField
+          label="Mobile Number *"
+          placeholder="Enter your mobile number (Bangladesh)"
+          value={mobile}
+          onChangeText={setMobile}
+          keyboardType="phone-pad"
+        />
+
         <View
           style={{
             marginBottom: 20,
@@ -448,9 +494,8 @@ const CreateOwnBusiness = () => {
           placeholder="Write about your business..."
           value={about}
           onChangeText={setAbout}
-          multiline= {true}
+          multiline={true}
           numberOfLines={3}
-          style={{ minHeight: 100 }}
         />
 
         <InputField

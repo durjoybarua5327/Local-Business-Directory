@@ -22,20 +22,76 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RED = '#f44336';
 const LIGHT_RED = '#ff7961';
 
-// Function to extract readable place from Google Maps URL
-const extractPlaceName = (url) => {
-    try {
-        const searchParams = new URL(url).searchParams;
-        let query = searchParams.get('q');
-        if (query) {
-            query = query.replace(/location/gi, '').trim();
-            return query;
+/**
+ * Improved extractor that handles:
+ * - plain addresses (returns as-is)
+ * - google maps urls with ?q= or &query=
+ * - /maps/place/<name>/...
+ * - /maps/search/<name>
+ * - /search/<name>
+ * - hash fragments containing rlimm or other encoded names
+ * - best-effort fallback to a human readable path segment
+ */
+const extractPlaceName = (urlOrAddress) => {
+    if (!urlOrAddress) return '';
+
+    const tryDecode = (s) => {
+        try {
+            return decodeURIComponent(s).replace(/\+/g, ' ').trim();
+        } catch {
+            return s.replace(/\+/g, ' ').trim();
         }
-        const hashPart = url.split('#')[1] || '';
-        const match = hashPart.match(/rlimm=.*$/);
-        if (match) return decodeURIComponent(match[0].split('=')[1]);
+    };
+
+    // If it's not a URL, assume it's already a human-readable address
+    let isUrl = true;
+    try { new URL(urlOrAddress); } catch { isUrl = false; }
+
+    if (!isUrl) {
+        // clean up common noise words
+        return urlOrAddress.replace(/location/gi, '').trim();
+    }
+
+    try {
+        const u = new URL(urlOrAddress);
+        const sp = u.searchParams;
+
+        // Common query params
+        const q = sp.get('q') || sp.get('query') || sp.get('search') || sp.get('destination');
+        if (q) return tryDecode(q).replace(/location/gi, '').trim();
+
+        // Path-based formats: /maps/place/<name>/...
+        const pathname = u.pathname || '';
+        let m;
+
+        m = pathname.match(/\/maps\/place\/([^\/]+)/i);
+        if (m && m[1]) return tryDecode(m[1]);
+
+        m = pathname.match(/\/maps\/search\/([^\/]+)/i) || pathname.match(/\/search\/([^\/]+)/i);
+        if (m && m[1]) return tryDecode(m[1]);
+
+        // Some links like https://www.google.com/maps/dir/.../<Name>/@... -> try to pick readable segment
+        const parts = pathname.split('/').filter(Boolean);
+        // iterate from end to start and pick the first "human" looking segment
+        for (const seg of [...parts].reverse()) {
+            const cleaned = seg.replace(/[!@#$%^&*()_+=~`{}[\]|\\:;"'<>,.?]/g, '');
+            // skip numeric segments or segments that look like coordinates or very short tokens
+            if (!cleaned) continue;
+            if (/^[0-9\-.@]/.test(cleaned)) continue;
+            if (cleaned.length < 2) continue;
+            // Many Google pieces include `@` or coordinates - skip those
+            if (cleaned.includes('@') || cleaned.match(/^\-?\d+(\.\d+)?$/)) continue;
+            return tryDecode(cleaned);
+        }
+
+        // check hash for rlimm or other encoded name tokens
+        const hash = u.hash || '';
+        let rlimm = hash.match(/rlimm=([^&]+)/i);
+        if (rlimm && rlimm[1]) return tryDecode(rlimm[1]);
+
+        // last resort: show host or empty
         return '';
-    } catch (_error) {
+    } catch (_e) {
         return '';
     }
 };
@@ -76,15 +132,40 @@ export default function BusinessDetails() {
 
     const placeName = extractPlaceName(Business.address);
 
-    const handleCall = () => Linking.openURL(`tel:${Business.phone || '20220'}`);
-    const handleWebsite = () => Business.website && Linking.openURL(Business.website);
+    const handleCall = () => {
+        const phone = Business.phone || '';
+        if (phone) Linking.openURL(`tel:${phone}`);
+        else Linking.openURL('tel:20220');
+    };
+
+    const handleWebsite = () => {
+        if (Business.website) {
+            Linking.openURL(Business.website).catch(err => console.warn('Cannot open website', err));
+        }
+    };
+
     const handleShare = async () => {
         try {
-            await Share.share({ message: `Check out ${Business.name} at ${Business.website || 'website not available'}` });
+            await Share.share({ message: `Check out ${Business.name} at ${Business.website || (Business.address || 'address not available')}` });
         } catch (error) { console.log("Error sharing:", error); }
     };
+
     const handleLocation = () => {
-        if (Business.address) Linking.openURL(Business.address);
+        if (!Business.address) return;
+        // If address is already a valid URL, open it. Otherwise open google maps search with the address.
+        let isUrl = true;
+        try { new URL(Business.address); } catch { isUrl = false; }
+
+        if (isUrl) {
+            Linking.openURL(Business.address).catch(err => {
+                console.warn('Failed to open URL, falling back to maps search', err);
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(Business.address)}`;
+                Linking.openURL(mapsUrl);
+            });
+        } else {
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(Business.address)}`;
+            Linking.openURL(mapsUrl).catch(err => console.warn('Failed to open maps', err));
+        }
     };
 
     return (
@@ -99,7 +180,7 @@ export default function BusinessDetails() {
             <View style={styles.detailsContainer}>
                 <Text style={styles.title}>{Business.name || "Unnamed Business"}</Text>
                 <Text style={styles.category}>{Business.category || ""}</Text>
-                {placeName ? <Text style={styles.location}>{placeName}</Text> : null}
+                {placeName ? <Text style={styles.location}>{placeName}</Text> : (Business.address && !Business.address.startsWith('http') ? <Text style={styles.location}>{Business.address}</Text> : null)}
 
                 <View style={styles.actionsRow}>
                     <TouchableOpacity style={styles.actionBtn} onPress={handleCall}>

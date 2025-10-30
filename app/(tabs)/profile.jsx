@@ -2,22 +2,25 @@ import { useClerk, useUser } from '@clerk/clerk-expo'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import {
-    Animated,
-    Dimensions,
-    Image,
-    Modal,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Image,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
 } from 'react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 import UserBusinessCard from '../CreateOwnBusinesses/UserBusinessCard.jsx'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { db } from '../../Configs/FireBaseConfig'
 
 const { width, height } = Dimensions.get('window')
 const LIGHT_RED = '#ffe5e5'
@@ -29,17 +32,33 @@ export default function Profile() {
   const { signOut, openSignIn } = useClerk()
   const router = useRouter()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
-  const slideAnim = useRef(new Animated.Value(height)).current // start offscreen
+  const [userBusinessCount, setUserBusinessCount] = useState(0)
+  const slideAnim = useRef(new Animated.Value(height)).current 
 
   const imageUrl = user?.imageUrl
   const name = user?.fullName || user?.firstName || 'User'
   const email = user?.emailAddresses?.[0]?.emailAddress || 'No email'
+  const userId = user?.id
+  const ADMIN_EMAIL = process.env.EXPO_PUBLIC_ADMIN_EMAIL
 
   const avatarSize = width * 0.3
   const horizontalPadding = width * 0.05
   const spacing = width * 0.03
 
-  // Open modal with slide animation
+  // Live Fetch user's business count
+  useEffect(() => {
+    if (!email) return
+
+    const q = query(collection(db, 'Business List'), where('userEmail', '==', email))
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => setUserBusinessCount(snapshot.size),
+      (error) => console.error('Error fetching user businesses:', error)
+    )
+
+    return () => unsubscribe()
+  }, [email])
+
   const handleSignOutPress = () => {
     setShowSignOutModal(true)
     Animated.timing(slideAnim, {
@@ -49,7 +68,6 @@ export default function Profile() {
     }).start()
   }
 
-  // Close modal with slide-down animation
   const handleCloseModal = () => {
     Animated.timing(slideAnim, {
       toValue: height,
@@ -61,6 +79,23 @@ export default function Profile() {
   const handleConfirmSignOut = () => {
     handleCloseModal()
     signOut()
+  }
+
+  const handleCreateBusiness = () => {
+    if (userBusinessCount >= 2) {
+      Alert.alert(
+        'Limit Reached',
+        'You already have 2 businesses. You cannot create more.'
+      )
+      return
+    }
+    router.push({
+      pathname: '/CreateOwnBusinesses/CreateOwnBusiness',
+      params: {
+        userEmail: email,
+        userId: userId,
+      },
+    })
   }
 
   return (
@@ -80,9 +115,6 @@ export default function Profile() {
             padding: spacing * 2,
             marginVertical: spacing * 2,
             alignItems: 'center',
-            boxShadowColor: RED_ACCENT,
-            boxShadowOpacity: 0.3,
-            boxShadowRadius: 10,
             elevation: 5,
           }}
         >
@@ -108,9 +140,6 @@ export default function Profile() {
                 backgroundColor: RED_ACCENT,
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadowColor: RED_ACCENT,
-                boxShadowOpacity: 0.5,
-                boxShadowRadius: 8,
                 elevation: 5,
               }}
             >
@@ -132,9 +161,6 @@ export default function Profile() {
               fontFamily: 'Outfit-Bold',
               color: '#fff',
               marginTop: spacing,
-              textShadowColor: 'rgba(0,0,0,0.2)',
-              textShadowOffset: { width: 1, height: 1 },
-              textShadowRadius: 3,
             }}
           >
             {name}
@@ -160,9 +186,6 @@ export default function Profile() {
             borderRadius: 20,
             padding: spacing * 2,
             marginBottom: spacing * 2,
-            boxShadowColor: '#000',
-            boxShadowOpacity: 0.1,
-            boxShadowRadius: 10,
             elevation: 5,
           }}
         >
@@ -194,12 +217,22 @@ export default function Profile() {
               {email}
             </Text>
           </View>
+
+          <View>
+            <Text style={{ fontSize: RFValue(14), fontFamily: 'Outfit-Bold', color: TEXT_RED }}>
+              Total Businesses
+            </Text>
+            <Text style={{ fontSize: RFValue(14), fontFamily: 'Outfit-Regular', color: '#555' }}>
+              {userBusinessCount}
+            </Text>
+          </View>
         </View>
 
-        {/* User Business Card with View button */}
+        {/* User Business Card with live data */}
         {user?.emailAddresses?.[0]?.emailAddress && (
-          <UserBusinessCard 
-            userEmail={user?.emailAddresses?.[0]?.emailAddress} 
+          <UserBusinessCard
+            userEmail={email}
+            liveUpdate={true} // add prop to handle live updates if needed in the component
             onView={(businessId) =>
               router.push('/BusinessDetails/' + encodeURIComponent(businessId))
             }
@@ -222,9 +255,6 @@ export default function Profile() {
               justifyContent: 'center',
               paddingVertical: spacing,
               borderRadius: 12,
-              boxShadowColor: '#000',
-              boxShadowOpacity: 0.2,
-              boxShadowRadius: 6,
               elevation: 3,
             }}
           >
@@ -248,12 +278,7 @@ export default function Profile() {
 
         {/* Create Your Own Business Button */}
         <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: '/CreateOwnBusinesses/CreateOwnBusiness',
-              params: { userEmail: user?.emailAddresses?.[0]?.emailAddress },
-            })
-          }
+          onPress={handleCreateBusiness}
           activeOpacity={0.8}
           style={{ marginBottom: spacing * 2 }}
         >
@@ -267,9 +292,6 @@ export default function Profile() {
               justifyContent: 'center',
               paddingVertical: spacing,
               borderRadius: 12,
-              boxShadowColor: '#000',
-              boxShadowOpacity: 0.2,
-              boxShadowRadius: 6,
               elevation: 3,
             }}
           >
@@ -291,30 +313,44 @@ export default function Profile() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Settings */}
-        <View
-          style={{
-            backgroundColor: '#fff',
-            borderRadius: 20,
-            padding: spacing * 2,
-            boxShadowColor: '#000',
-            boxShadowOpacity: 0.08,
-            boxShadowRadius: 8,
-            elevation: 3,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: RFValue(18),
-              fontFamily: 'Outfit-Bold',
-              color: TEXT_RED,
-              marginBottom: spacing,
-            }}
+        {/* Admin Panel Button */}
+        {ADMIN_EMAIL && email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+          <TouchableOpacity
+            onPress={() => router.push('/Admin/AdminPanel')}
+            activeOpacity={0.8}
+            style={{ marginTop: spacing * 2 }}
           >
-            Settings & Preferences
-          </Text>
-          <Text style={{ fontSize: RFValue(14), color: '#555' }}>Coming Soon...</Text>
-        </View>
+            <LinearGradient
+              colors={['#6b42c1', '#b06ab3']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: spacing,
+                borderRadius: 12,
+                elevation: 3,
+              }}
+            >
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={RFValue(18)}
+                color="#fff"
+                style={{ marginRight: spacing / 2 }}
+              />
+              <Text
+                style={{
+                  color: '#fff',
+                  fontSize: RFValue(16),
+                  fontFamily: 'Outfit-Bold',
+                }}
+              >
+                Admin Panel
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Animated Slide-Up Modal */}
@@ -333,9 +369,6 @@ export default function Profile() {
               padding: 20,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
-              boxShadowColor: RED_ACCENT,
-              boxShadowOpacity: 0.4,
-              boxShadowRadius: 10,
               elevation: 10,
             }}
           >

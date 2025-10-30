@@ -7,6 +7,43 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Simple admin route to delete a Clerk user (requires CLERK_API_KEY and ADMIN_SECRET env vars)
+app.post('/admin/delete-user', async (req, res) => {
+    try {
+        const adminSecretHeader = req.headers['x-admin-secret'] || req.headers['x_admin_secret']
+        if (!process.env.ADMIN_SECRET || adminSecretHeader !== process.env.ADMIN_SECRET) {
+            return res.status(401).json({ error: 'Unauthorized - missing or invalid admin secret' })
+        }
+
+        const { userId } = req.body
+        if (!userId) return res.status(400).json({ error: 'userId required' })
+
+        if (!process.env.CLERK_API_KEY) {
+            return res.status(500).json({ error: 'CLERK_API_KEY not configured on server' })
+        }
+
+        // Call Clerk API to delete user
+        const clerkResp = await fetch(`https://api.clerk.com/v1/users/${encodeURIComponent(userId)}`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${process.env.CLERK_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+        })
+
+        if (!clerkResp.ok) {
+            const text = await clerkResp.text()
+            console.error('Clerk delete user failed:', clerkResp.status, text)
+            return res.status(502).json({ error: 'Failed to delete user via Clerk', details: text })
+        }
+
+        return res.json({ ok: true })
+    } catch (err) {
+        console.error('Error in /admin/delete-user', err)
+        return res.status(500).json({ error: 'Internal server error' })
+    }
+})
+
 // --- MySQL Connection ---
 const db = mysql.createConnection({
     host: 'localhost',

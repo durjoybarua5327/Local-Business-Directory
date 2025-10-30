@@ -194,7 +194,7 @@ export default function Explore() {
           style={{ marginRight: spacing }}
         />
         <TextInput
-          placeholder="Search by location..."
+          placeholder="Search by location,category, items name..."
           style={styles.searchInput}
           placeholderTextColor={RED_ACCENT}
           value={search}

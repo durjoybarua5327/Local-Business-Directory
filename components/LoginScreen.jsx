@@ -1,9 +1,11 @@
-import { useOAuth, useAuth } from "@clerk/clerk-expo";
+import { useAuth, useClerk, useOAuth } from "@clerk/clerk-expo";
 import * as AuthSession from "expo-auth-session";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { doc, getDoc } from 'firebase/firestore';
 import React from "react";
 import {
+  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -12,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { db } from '../Configs/FireBaseConfig';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,7 +27,8 @@ const TEXT_RED = "#d42525";
 export default function LoginScreen() {
   const router = useRouter();
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
-  const { isSignedIn, user } = useAuth(); 
+  const { isSignedIn, user } = useAuth();
+  const { signOut } = useClerk()
 
   React.useEffect(() => {
     WebBrowser.warmUpAsync();
@@ -33,19 +37,98 @@ export default function LoginScreen() {
     };
   }, []);
 
-  // Navigate to main page once user is signed in
+  // When a user signs in, check whether they've been banned in Firestore.
+  // If banned, sign them out and show an alert. Otherwise navigate into the app.
   React.useEffect(() => {
-    if (isSignedIn && user) {
-      router.replace("/app_layout");
+    if (!isSignedIn || !user) return;
+
+    let mounted = true
+
+    const checkBanAndNavigate = async () => {
+      try {
+        const email = user?.emailAddresses?.[0]?.emailAddress
+        if (!email) {
+          router.replace('/app_layout')
+          return
+        }
+
+        const ref = doc(db, 'BannedUsers', email)
+        const snap = await getDoc(ref)
+
+        if (snap.exists()) {
+          const data = snap.data()
+          const bannedUntil = data?.bannedUntil
+
+          let isBanned = false
+          let untilText = ''
+
+          // bannedUntil can be: null (lifetime ban), Firestore Timestamp, or JS Date
+          if (bannedUntil === null) {
+            isBanned = true
+            untilText = 'permanently'
+          } else if (bannedUntil && typeof bannedUntil === 'object') {
+            // Firestore Timestamp has .seconds OR .toDate(); support both
+            let until = null
+            if (typeof bannedUntil.seconds === 'number') {
+              until = new Date(bannedUntil.seconds * 1000)
+            } else if (typeof bannedUntil.toDate === 'function') {
+              until = bannedUntil.toDate()
+            } else if (bannedUntil instanceof Date) {
+              until = bannedUntil
+            }
+
+            if (until) {
+              if (until > new Date()) {
+                isBanned = true
+                untilText = `until ${until.toLocaleString()}`
+              }
+            }
+          }
+
+          if (isBanned) {
+            // Inform user and sign out
+            Alert.alert('Account banned', `Your account is banned ${untilText}. If you think this is a mistake contact the admins.`)
+            try {
+              await signOut()
+            } catch (e) {
+              console.error('Failed to sign out banned user', e)
+            }
+            return
+          }
+        }
+
+        // Not banned — navigate into the app
+        if (mounted) router.replace('/app_layout')
+      } catch (err) {
+        console.error('Failed to check ban status', err)
+        // On error, fall back to allowing access so users aren't permanently locked out
+        if (mounted) router.replace('/app_layout')
+      }
     }
-  }, [isSignedIn, user, router]);
+
+    checkBanAndNavigate()
+
+    return () => {
+      mounted = false
+    }
+  }, [isSignedIn, user, router, signOut])
 
   const onPress = async () => {
+    // If already signed in, avoid starting a new OAuth flow which causes
+    // Clerk to throw "You're already signed in." — instead navigate.
+    if (isSignedIn) {
+      console.log("User already signed in — navigating to app layout");
+      router.replace("/app_layout");
+      return;
+    }
+
     try {
       await startOAuthFlow({
         redirectUrl: AuthSession.makeRedirectUri({ useProxy: true }),
       });
     } catch (err) {
+      // Log and show a helpful message; do not rethrow so the dev server
+      // / app doesn't crash from this error.
       console.error("OAuth error:", err);
     }
   };
