@@ -46,9 +46,12 @@ export default function LoginScreen() {
 
     const checkBanAndNavigate = async () => {
       try {
+        // Wait for user data to be fully available
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         const email = user?.emailAddresses?.[0]?.emailAddress
         if (!email) {
-          router.replace('/app_layout')
+          if (mounted) router.push('/app_layout')
           return
         }
 
@@ -114,22 +117,43 @@ export default function LoginScreen() {
   }, [isSignedIn, user, router, signOut])
 
   const onPress = async () => {
-    // If already signed in, avoid starting a new OAuth flow which causes
-    // Clerk to throw "You're already signed in." — instead navigate.
-    if (isSignedIn) {
-      console.log("User already signed in — navigating to app layout");
-      router.replace("/app_layout");
-      return;
-    }
-
     try {
-      await startOAuthFlow({
+      // Double check signed in status and clear any stale session if needed
+      if (isSignedIn) {
+        console.log("User already signed in — navigating to app layout");
+        await router.push("/app_layout");
+        return;
+      }
+
+      const { createdSessionId, setActive } = await startOAuthFlow({
         redirectUrl: AuthSession.makeRedirectUri({ useProxy: true }),
       });
+      
+      if (createdSessionId) {
+        // Set the session as active
+        await setActive?.({ session: createdSessionId });
+        // Small delay to ensure session is active
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await router.push("/app_layout");
+      }
     } catch (err) {
-      // Log and show a helpful message; do not rethrow so the dev server
-      // / app doesn't crash from this error.
       console.error("OAuth error:", err);
+      
+      // If the error is about already being signed in, try to navigate
+      if (err.message?.includes("already signed in")) {
+        try {
+          await router.push("/app_layout");
+          return;
+        } catch (navErr) {
+          console.error("Navigation error:", navErr);
+        }
+      }
+      
+      // Show error alert for other errors
+      Alert.alert(
+        "Login Error",
+        "There was an error logging in. Please try again."
+      );
     }
   };
 
