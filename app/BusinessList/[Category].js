@@ -10,7 +10,7 @@ export default function BusinessListByCategory() {
   const { Category } = useLocalSearchParams();
   const navigation = useNavigation();
   const [businesslist, setBusinesslist] = useState([]);
-  const [loading , setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // ✅ Start with true
 
   useEffect(() => {
     navigation.setOptions({
@@ -28,10 +28,13 @@ export default function BusinessListByCategory() {
   }, [navigation, Category]);
 
   useEffect(() => {
+    setLoading(true); // ✅ Set loading when category changes
+    
     const q = query(
       collection(db, 'Business List'),
       where('category', '==', Category)
     );
+    
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
@@ -39,6 +42,7 @@ export default function BusinessListByCategory() {
         querySnapshot.forEach((doc) => {
           businesses.push({ id: doc.id, ...doc.data() });
         });
+        console.log(`Found ${businesses.length} businesses for category: ${Category}`); // Debug log
         setBusinesslist(businesses);
         setLoading(false);
       },
@@ -52,25 +56,27 @@ export default function BusinessListByCategory() {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, [Category]);
-  
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar backgroundColor="#c60c0cff" barStyle="light-content" />
 
-      <FlatList
-        data={businesslist}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <BusinessListCard business={item} />
-        )}
-      />
-
-      {loading && (
+      {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#db5f5f" />
           <Text style={styles.loaderText}>Fetching businesses...</Text>
         </View>
+      ) : businesslist.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No businesses found in this category</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={businesslist}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <BusinessListCard business={item} />}
+          contentContainerStyle={styles.listContainer}
+        />
       )}
     </View>
   );
@@ -78,10 +84,7 @@ export default function BusinessListByCategory() {
 
 const styles = StyleSheet.create({
   loaderContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '40%',
-    transform: [{ translateX: -50 }, { translateY: -50 }],
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -90,5 +93,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#db5f5f',
     fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  listContainer: {
+    paddingVertical: 10,
   },
 });
