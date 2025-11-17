@@ -1,22 +1,20 @@
 import { useUser } from '@clerk/clerk-expo'
-import { Ionicons } from '@expo/vector-icons'
 import React from 'react'
 import {
-    Dimensions,
-    Image,
-    Platform,
-    SafeAreaView,
-    StatusBar,
-    Text,
-    TextInput,
-    View,
+  Dimensions,
+  Image,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  Text,
+  View
 } from 'react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 
 const { width } = Dimensions.get('window')
 
 // Color Constants
-const LIGHT_RED = '#ffcccc'
+const LIGHT_RED = '#ffd6d6'
 const RED_ACCENT = '#ff6f6f'
 const TEXT_RED = '#d42525'
 
@@ -106,33 +104,7 @@ export default function Header() {
           </View>
         </View>
 
-        {/* Search Bar */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            width: '100%',
-            height: RFValue(40),
-            backgroundColor: '#ffeaea',
-            borderRadius: 10,
-            paddingHorizontal: spacing,
-            borderWidth: 1,
-            borderColor: RED_ACCENT,
-          }}
-        >
-          <Ionicons name="search" size={RFValue(16)} color={RED_ACCENT} style={{ marginRight: spacing }} />
-          <TextInput
-            placeholder="Search businesses..."
-            style={{
-              flex: 1,
-              fontSize: RFValue(14),
-              fontFamily: 'Outfit-Regular',
-              color: TEXT_RED,
-              paddingVertical: 0,
-            }}
-            placeholderTextColor={RED_ACCENT}
-          />
-        </View>
+        {/* Search removed from header - search is handled in the Explore screen */}
       </View>
     </SafeAreaView>
   )

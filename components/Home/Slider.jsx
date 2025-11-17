@@ -1,4 +1,6 @@
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,13 +12,11 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { db } from './../../Configs/FireBaseConfig';
 
 const { width, height } = Dimensions.get('window');
 const RADISH = '#D32F2F';
-const LIGHT_RED = '#FFE5E5';
+const LIGHT_RED = '#ffd6d6';
 
 const vw = width / 100;
 const vh = height / 100;
@@ -153,20 +153,20 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Outfit-Medium',
-    fontSize: vw * 4.5, 
-    marginLeft: vw * 2,
+    fontSize: vw * 4,
+    marginLeft: vw * 1.6,
     color: RADISH,
     fontWeight: 'bold',
   },
   listContainer: {
-    paddingLeft: vw * 4,
+    paddingLeft: vw * 3.5,
     paddingVertical: vh * 0.5,
   },
   card: {
-    marginRight: vw * 4,
-    borderRadius: vw * 4,
+    marginRight: vw * 3,
+    borderRadius: vw * 3,
     overflow: 'hidden',
-    width: width * 0.75,
+    width: width * 0.65,
     shadowColor: RADISH,
     shadowOpacity: 0.3,
     shadowRadius: vw * 3,
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: height * 0.2,
+    height: height * 0.17,
   },
   image: {
     width: '100%',
@@ -190,12 +190,12 @@ const styles = StyleSheet.create({
   },
   categoryBadge: {
     position: 'absolute',
-    top: vw * 3,
-    left: vw * 3,
+    top: vw * 2.2,
+    left: vw * 2.2,
     backgroundColor: RADISH,
-    paddingHorizontal: vw * 3,
-    paddingVertical: vh * 0.5,
-    borderRadius: vw * 3,
+    paddingHorizontal: vw * 2.4,
+    paddingVertical: vh * 0.4,
+    borderRadius: vw * 2.4,
   },
   categoryText: {
     fontFamily: 'Outfit-Medium',
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   businessName: {
     fontFamily: 'Outfit-Bold',
-    fontSize: vw * 4.2,
+    fontSize: vw * 3.8,
     color: '#fff',
     marginBottom: vh * 0.5,
   },
@@ -221,14 +221,14 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontFamily: 'Outfit-Regular',
-    fontSize: vw * 3.2,
+    fontSize: vw * 3,
     color: '#fff',
     marginLeft: vw * 1,
     flex: 1,
   },
   reviewCount: {
     fontFamily: 'Outfit-Regular',
-    fontSize: vw * 2.8,
+    fontSize: vw * 2.6,
     color: '#fff',
     marginTop: vh * 0.4,
     opacity: 0.9,

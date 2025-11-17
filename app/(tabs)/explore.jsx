@@ -172,14 +172,39 @@ export default function Explore() {
     };
   }, []);
 
-  // Filter by search (location) and category
+  // Filter by search (supports multiple space-separated tokens) and category
+  // Each token must match at least one searchable field (AND behavior across tokens)
   const filteredData = businesses.filter((item) => {
-    const searchLower = search.toLowerCase().trim();
-    const placeName = extractPlaceName(item.address).toLowerCase();
-    const matchesSearch = placeName.includes(searchLower);
+    const searchLower = (search || '').toLowerCase().trim();
+
     const matchesCategory =
       selectedCategory && selectedCategory !== 'All' ? item.category === selectedCategory : true;
-    return matchesSearch && matchesCategory;
+
+    // If no search text, just return category-matched items
+    if (!searchLower) return matchesCategory;
+
+    // Split into tokens so queries like "parkview chattogram x-ray" work
+    const tokens = searchLower.split(/\s+/).filter(Boolean);
+
+    // Prepare searchable values
+    const placeName = extractPlaceName(item.address || '').toLowerCase();
+    const rawAddress = (item.address || '').toLowerCase();
+    const name = (item.name || '').toLowerCase();
+    const category = (item.category || '').toLowerCase();
+    const about = (item.about || '').toLowerCase();
+
+    // For each token, require it to appear in at least one searchable field
+    const allTokensMatch = tokens.every((t) => {
+      return (
+        name.includes(t) ||
+        placeName.includes(t) ||
+        rawAddress.includes(t) ||
+        category.includes(t) ||
+        about.includes(t)
+      );
+    });
+
+    return allTokensMatch && matchesCategory;
   });
 
   const ListHeader = useMemo(() => (

@@ -5,14 +5,14 @@ import * as WebBrowser from "expo-web-browser";
 import { doc, getDoc } from 'firebase/firestore';
 import React from "react";
 import {
-  Alert,
-  Dimensions,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { db } from '../Configs/FireBaseConfig';
 
@@ -20,7 +20,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 const { width, height } = Dimensions.get("window");
 
-const LIGHT_RED = "#ffcccc";
+const LIGHT_RED = "#ffd6d6";
 const RED_ACCENT = "#ff6f6f";
 const TEXT_RED = "#d42525";
 
