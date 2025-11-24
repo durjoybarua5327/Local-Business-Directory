@@ -2,13 +2,13 @@ import { useRouter } from 'expo-router';
 import { collection, onSnapshot } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Dimensions,
+    FlatList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { db } from './../../Configs/FireBaseConfig';
 
@@ -108,7 +108,15 @@ export default function Category() {
 
       {viewAll ? (
         <View style={styles.verticalContainer}>
-          {categories.map((item) => renderItem({ item }))}
+          {categories.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[styles.item, styles.itemVertical]}
+              onPress={() => onCategoryPress(item)}
+            >
+              <Text style={[styles.name, styles.nameVertical]}>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       ) : (
         <FlatList

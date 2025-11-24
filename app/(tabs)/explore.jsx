@@ -38,7 +38,6 @@ const extractPlaceName = (url) => {
   }
 };
 
-// Category Component fetching unique categories from "Business List"
 const Category = ({ selectedCategory, setSelectedCategory }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -241,7 +240,7 @@ export default function Explore() {
           />
           <Text style={styles.sectionTitle}>
             {selectedCategory === 'All'
-              ? 'All Shops Nearby'
+              ? 'All Shops'
               : `${selectedCategory} Shops Nearby`}
           </Text>
         </View>
@@ -263,7 +262,7 @@ export default function Explore() {
             {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
             <View style={styles.cardContent}>
               <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.address}>{extractPlaceName(item.address) || 'No Address'}</Text>
+              <Text style={styles.address}>{extractPlaceName(item.address) || item.address || 'No Address'}</Text>
               <Text style={styles.review}>Rating: ⭐{item.avgRating}/5</Text>
               <TouchableOpacity
                 style={styles.viewReviewsBtn}

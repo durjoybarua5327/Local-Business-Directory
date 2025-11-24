@@ -5,14 +5,14 @@ import * as WebBrowser from "expo-web-browser";
 import { doc, getDoc } from 'firebase/firestore';
 import React from "react";
 import {
-    Alert,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { db } from '../Configs/FireBaseConfig';
 
@@ -37,8 +37,6 @@ export default function LoginScreen() {
     };
   }, []);
 
-  // When a user signs in, check whether they've been banned in Firestore.
-  // If banned, sign them out and show an alert. Otherwise navigate into the app.
   React.useEffect(() => {
     if (!isSignedIn || !user) return;
 
@@ -163,7 +161,7 @@ export default function LoginScreen() {
         {/* Image Section */}
         <View style={styles.imageContainer}>
           <Image
-            source={require("../assets/images/picture1.jpg")}
+            source={require("../assets/images/image.png")}
             style={styles.image}
             resizeMode="cover"
           />
@@ -171,9 +169,8 @@ export default function LoginScreen() {
 
         {/* Text + Button Section */}
         <View style={styles.subcontainer}>
-          <Text style={styles.headerPrimary}>Your ultimate</Text>
           <Text style={styles.headerSecondary}>
-            Community Business Directory
+            Local Business Directory
           </Text>
           <Text style={styles.headerApp}>App</Text>
 
@@ -202,14 +199,14 @@ const styles = StyleSheet.create({
     marginTop: height * 0.08,
     alignItems: "center",
   },
-  image: {
-    width: width * 0.6,
-    height: height * 0.5,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: RED_ACCENT,
-    backgroundColor: LIGHT_RED,
-  },
+ image: {
+  width: width * 0.9,   // <-- increased from 0.6 to 0.9
+  height: height * 0.45,
+  borderRadius: 20,
+  borderWidth: 3,
+  borderColor: RED_ACCENT,
+  backgroundColor: LIGHT_RED,
+},
   subcontainer: {
     flex: 1,
     width: "90%",

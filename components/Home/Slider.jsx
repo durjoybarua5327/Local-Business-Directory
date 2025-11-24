@@ -3,14 +3,14 @@ import { useRouter } from 'expo-router';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Dimensions,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { db } from './../../Configs/FireBaseConfig';
 
@@ -128,7 +128,7 @@ export default function Slider() {
               <View style={styles.locationRow}>
                 <Ionicons name="location-sharp" size={vw * 3.5} color="#fff" />
                 <Text style={styles.locationText} numberOfLines={1}>
-                  {extractPlaceName(item.address) || 'Location not available'}
+                  {extractPlaceName(item.address) || item.address || 'Location not available'}
                 </Text>
               </View>
               <Text style={styles.reviewCount}>Added recently</Text>
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit-Medium',
     fontSize: vw * 4,
     marginLeft: vw * 1.6,
-    color: RADISH,
+    color: '#E95656',
     fontWeight: 'bold',
   },
   listContainer: {
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   infoOverlay: {
-    backgroundColor: 'rgba(211, 47, 47, 0.95)',
+    backgroundColor: '#E94646',
     padding: vw * 3.5,
   },
   businessName: {
