@@ -49,7 +49,6 @@ const Category = ({ selectedCategory, setSelectedCategory }) => {
         const unsubscribe = onSnapshot(
           q,
           (querySnapshot) => {
-            // Extract unique categories
             const uniqueCategories = new Set();
             querySnapshot.docs.forEach((doc) => {
               const data = doc.data();
