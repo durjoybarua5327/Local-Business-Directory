@@ -4,6 +4,21 @@ Welcome to the **Local Business Directory** application! A modern, feature-rich 
 
 ![Platform](https://img.shields.io/badge/Platform-React%20Native-blue) ![Build Status](https://img.shields.io/badge/Status-Active-brightgreen) ![License](https://img.shields.io/badge/License-MIT-green)
 
+## 📸 App Highlights
+
+<div align="center">
+  <img src="./demos/image0.png" alt="App Demo 1" width="180" />
+  <img src="./demos/image1.png" alt="App Demo 2" width="180" />
+  <img src="./demos/image2.png" alt="App Demo 3" width="180" />
+  <img src="./demos/image3.png" alt="App Demo 4" width="180" />
+</div>
+
+<div align="center">
+  <img src="./demos/image4.png" alt="App Demo 5" width="180" />
+  <img src="./demos/image5.png" alt="App Demo 6" width="180" />
+  <img src="./demos/image6.png" alt="App Demo 7" width="180" />
+  <img src="./demos/image7.png" alt="App Demo 8" width="180" />
+</div>
 
 ## 🎯 Overview
 

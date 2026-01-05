@@ -2,7 +2,6 @@ import React from 'react'
 import { LogBox, ScrollView, View } from 'react-native'
 import BusinessList from '../../components/Home/BusinessList.jsx'
 import Category from '../../components/Home/Category.jsx'
-import DemoShowcase from '../../components/Home/DemoShowcase.jsx'
 import Header from '../../components/Home/Header.jsx'
 import Slider from '../../components/Home/Slider.jsx'
 
@@ -19,7 +18,6 @@ export default function home() {
     >
       <Header />
       <Slider />
-      <DemoShowcase />
       <Category />
       <BusinessList /> {/* FlatList inside this will now scroll correctly */}
       <View style={{ height: 50 }} />
